@@ -18,12 +18,14 @@ public class Robot extends IterativeRobot {
 	Joystick rightStick = new Joystick(1);	//Right Driver Joystick
 	Joystick maniStick = new Joystick(2);	//Manipulator Joystick
 	
+	@Override
     public void robotInit() {
     	
     	m2.follow(m0);	//Back Left Motor (Slave) Follows Front Left Motor
     	m3.follow(m1);	//Back Right Motor (Slave) Follows Front Right Motor
     }
-
+    
+	@Override
     public void teleopPeriodic() {
 
     	double left = leftStick.getY();		//Left Drive Speed
