@@ -26,7 +26,7 @@ public class Robot extends IterativeRobot {
 
     public void teleopPeriodic() {
 
-    	double left = leftStick.getY();	//Left Drive Speed
+    	double left = leftStick.getY();		//Left Drive Speed
     	double right = rightStick.getY();	//Right Drive Speed
 
     	driveTrain.tankDrive(left, right);	//Tank Drive Control
