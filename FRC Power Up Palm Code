@@ -1,0 +1,149 @@
+package org.usfirst.frc.team3489.robot;
+
+/*
+Alex 01/13/2018 - Palm Base Code
+
+Left Stick Buttons
+ * 1 -
+ * 7 - 
+
+Right Stick Buttons
+ * 1 -
+ * 7 - 
+
+Manipulator Stick Buttons
+ * 1 - 
+ * 2 - 
+ * 3 - 
+ * 4 - 
+ * 5 - 
+ * 6 - 
+ * 7 - 
+ * 8 - 
+ * 9 - 
+ * 10 -
+ * 11 - 
+ * 12 - 
+*/
+
+import edu.wpi.first.wpilibj.AnalogGyro;
+import edu.wpi.first.wpilibj.AnalogInput;
+import edu.wpi.first.wpilibj.CameraServer;
+import edu.wpi.first.wpilibj.DigitalInput;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.Encoder;
+import edu.wpi.first.wpilibj.IterativeRobot;
+import edu.wpi.first.wpilibj.Joystick;
+import edu.wpi.first.wpilibj.Solenoid;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.drive.DifferentialDrive;
+import com.ctre.phoenix.motorcontrol.can.*;
+
+public class Robot extends IterativeRobot {
+	
+	Joystick leftStick = new Joystick(0);	// Left Driver Joystick
+	Joystick rightStick = new Joystick(1);	// Right Driver Joystick
+	Joystick maniStick = new Joystick(2);	// Manipulator Joystick
+	WPI_TalonSRX m0 = new WPI_TalonSRX(0);	// Front Left Motor
+	WPI_TalonSRX m1 = new WPI_TalonSRX(1);	// Front Right Motor
+	WPI_TalonSRX m2 = new WPI_TalonSRX(2);	// Back Left Motor (Slave)
+	WPI_TalonSRX m3 = new WPI_TalonSRX(3);	// Back Right Motor (Slave)
+	WPI_TalonSRX m4 = new WPI_TalonSRX(4);	// 
+	WPI_TalonSRX m5 = new WPI_TalonSRX(5);	// 
+	WPI_TalonSRX m6 = new WPI_TalonSRX(6);	// 
+	DifferentialDrive driveTrain = new DifferentialDrive(m0, m1);	// Main Drive Train
+	Solenoid s1 = new Solenoid(20, 1);	//
+	Encoder leftEnc = new Encoder(4, 5, false, Encoder.EncodingType.k2X);	// Left Drive Encoder
+	Encoder rightEnc = new Encoder(6, 7, false, Encoder.EncodingType.k2X);	// Right Drive Encoder
+	AnalogGyro gyro = new AnalogGyro(0);	// 
+	DigitalInput di1 = new DigitalInput(0);	  // 
+	DriverStation.Alliance color;	// = DriverStation.getInstance().getAlliance();
+	int step = 1;	// Initial Step Value
+	
+	
+	
+	@Override
+    public void robotInit() {
+		
+		// Safety
+			driveTrain.setSafetyEnabled(false);
+		
+		// Camera
+			try {
+				CameraServer.getInstance().startAutomaticCapture();
+				//system.out.println("Cam0 :D");
+			} catch (Exception e) {
+				//system.out.println("Failed Vision");
+			}
+				
+		// Gyroscope
+			gyro.calibrate();
+			gyro.initGyro();
+			gyro.reset();
+		
+		// Slaves
+    	m2.follow(m0);	// Back Left Motor (Slave) Follows Front Left Motor
+    	m3.follow(m1);	// Back Right Motor (Slave) Follows Front Right Motor
+    	
+		// SmartDashboard
+    	
+    	// Autonomous
+    		// Selection
+    		DigitalInput ch1 = new DigitalInput(10);	  // Left Switch Score/Autoline
+    		DigitalInput ch2 = new DigitalInput(10);	  // Middle Switch Score/Autoline
+    		DigitalInput ch3 = new DigitalInput(10);	  // Right Switch Score/Autoline
+    		DigitalInput ch4 = new DigitalInput(10);	  // Null
+    		// Distances
+    		// Angles
+    	
+    
+    }
+    
+	@Override
+    public void autonomousInit() {
+		
+		color = DriverStation.getInstance().getAlliance();
+		
+		// Autonomous Distances (Encoder)	
+		
+		// Autonomous Turn Angles (Gyro)	
+
+		// Resets
+			leftEnc.reset();
+			rightEnc.reset();
+			gyro.reset();
+			step = 1;
+
+		// Booleans
+    }
+    
+	@Override
+    public void autonomousPeriodic() {
+		
+			double encLD = leftEnc.getDistance() * -1; // encLD is the value of the left encoder
+			double encRD = rightEnc.getDistance() * 1; // encRD is the value on the right encoder
+			double gyroD = gyro.getAngle(); // gyroD is the angle of the gyro
+		
+    	  String gameData;
+    	    gameData = DriverStation.getInstance().getGameSpecificMessage();
+    	    if(gameData.charAt(0) == 'L')
+    	    {
+    	    	
+    	    } else {
+  
+    	    }
+    }
+    
+	@Override
+    public void teleopInit() {
+
+    }
+    
+	@Override
+    public void teleopPeriodic() {
+
+    	double lValue = leftStick.getY();	// Left Drive Speed
+    	double rValue = rightStick.getY();	// Right Drive Speed
+    	driveTrain.tankDrive(lValue, rValue);	// Tank Drive Control
+    }
+}
