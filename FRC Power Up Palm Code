@@ -4,26 +4,26 @@ package org.usfirst.frc.team3489.robot;
 Alex 01/13/2018 - Palm Base Code
 
 Left Stick Buttons
- * 1 -
- * 7 - 
+ * 1 - Camera POV Up
+ * 7 - Shift Gears 50%
 
 Right Stick Buttons
- * 1 -
- * 7 - 
+ * 1 - Camera POV Down
+ * 7 - Shift Gears 100%
 
 Manipulator Stick Buttons
- * 1 - 
- * 2 - 
- * 3 - 
- * 4 - 
- * 5 - 
- * 6 - 
- * 7 - 
- * 8 - 
- * 9 - 
- * 10 -
- * 11 - 
- * 12 - 
+ * 1 - Open Gripper
+ * 2 - Close Gripper
+ * 3 - Lift Retractor
+ * 4 - Lower Retractor
+ * 5 - Kill Lift
+ * 6 - NA
+ * 7 - Floor Position
+ * 8 - Switch Position 
+ * 9 - Low Scale Position 
+ * 10 - High Scale Position
+ * 11 - Climber Up
+ * 12 - Climber Down
 */
 
 import edu.wpi.first.wpilibj.AnalogGyro;
@@ -48,20 +48,82 @@ public class Robot extends IterativeRobot {
 	WPI_TalonSRX m1 = new WPI_TalonSRX(1);	// Front Right Motor
 	WPI_TalonSRX m2 = new WPI_TalonSRX(2);	// Back Left Motor (Slave)
 	WPI_TalonSRX m3 = new WPI_TalonSRX(3);	// Back Right Motor (Slave)
-	WPI_TalonSRX m4 = new WPI_TalonSRX(4);	// 
-	WPI_TalonSRX m5 = new WPI_TalonSRX(5);	// 
-	WPI_TalonSRX m6 = new WPI_TalonSRX(6);	// 
+	WPI_TalonSRX m4 = new WPI_TalonSRX(4);	// Lift Motor 
+	WPI_TalonSRX m5 = new WPI_TalonSRX(5);	// Climb Motor
 	DifferentialDrive driveTrain = new DifferentialDrive(m0, m1);	// Main Drive Train
-	Solenoid s1 = new Solenoid(20, 1);	//
+	Solenoid s1 = new Solenoid(20, 1);	// Gripper 
+	Solenoid s2 = new Solenoid(20, 2);	// Retractor
+	Solenoid s3 = new Solenoid(20, 3);	// Gear Shifter
+	Solenoid s4 = new Solenoid(20, 4);	// CameraPOV
 	Encoder leftEnc = new Encoder(4, 5, false, Encoder.EncodingType.k2X);	// Left Drive Encoder
 	Encoder rightEnc = new Encoder(6, 7, false, Encoder.EncodingType.k2X);	// Right Drive Encoder
-	AnalogGyro gyro = new AnalogGyro(0);	// 
-	DigitalInput di1 = new DigitalInput(0);	  // 
+	Encoder liftEnc = new Encoder(8, 9, false, Encoder.EncodingType.k2X);	// Lift Encoder
+	AnalogGyro gyro = new AnalogGyro(0);	// Gyroscope
+	DigitalInput gripperDown = new DigitalInput(0);	// Hall Sensor
+	DigitalInput autoCube = new DigitalInput(1); // Auto Grip and Retract With Cube
+	DigitalInput topRung = new DigitalInput(2); // Fully Climbed Rung
 	DriverStation.Alliance color;	// = DriverStation.getInstance().getAlliance();
 	int step = 1;	// Initial Step Value
 	
-	
-	
+	// Autonomous
+		// Selection
+			DigitalInput ch1 = new DigitalInput(10);	// Left Switch Score/Autoline
+			DigitalInput ch2 = new DigitalInput(11);	// Middle Switch Score/Autoline
+			DigitalInput ch3 = new DigitalInput(12);	// Right Switch Score/Autoline
+			DigitalInput ch4 = new DigitalInput(13);	// Null
+		
+		// Booleans
+			boolean firstTime = true; // First Part Of Autonomous
+			boolean secondTime = true; // Second Part Of Autonomous
+
+		// Distances
+			 // Left Side Switch Scoring
+				double leftDis1;
+				double leftDis2;
+				double leftDis3;
+				double leftDis4;
+				double leftDis5;
+				double leftDis6;
+			 // Middle Left Switch Scoring
+				double midlDis1;
+				double midlDis2;
+				double midlDis3;
+				double midlDis4;
+				double midlDis5;
+				double midlDis6;
+			 // Middle Right Switch Scoring
+				double midrDis1;
+				double midrDis2;
+				double midrDis3;
+				double midrDis4;
+				double midrDis5;
+				double midrDis6;
+			 // Right Side Switch Scoring
+				double rightDis1;
+				double rightDis2;
+				double rightDis3;
+				double rightDis4;
+				double rightDis5;
+				double rightDis6;
+		
+		// Angles
+			 // Left Side Switch Scoring
+				double leftAng1;
+				double leftAng2;
+			 // Middle Left Switch Scoring
+				double midlAng1;
+				double midlAng2;
+				double midlAng3;
+				double midlAng4;
+			 // Middle Right Switch Scoring
+				double midrAng1;
+				double midrAng2;
+				double midrAng3;
+				double midrAng4;
+		     // Right Side Switch Scoring
+				double rightAng1;
+				double rightAng2;
+
 	@Override
     public void robotInit() {
 		
@@ -71,7 +133,7 @@ public class Robot extends IterativeRobot {
 		// Camera
 			try {
 				CameraServer.getInstance().startAutomaticCapture();
-				//system.out.println("Cam0 :D");
+				//system.out.println("Cam0");
 			} catch (Exception e) {
 				//system.out.println("Failed Vision");
 			}
@@ -82,21 +144,11 @@ public class Robot extends IterativeRobot {
 			gyro.reset();
 		
 		// Slaves
-    	m2.follow(m0);	// Back Left Motor (Slave) Follows Front Left Motor
-    	m3.follow(m1);	// Back Right Motor (Slave) Follows Front Right Motor
+			m2.follow(m0);	// Back Left Motor (Slave) Follows Front Left Motor
+			m3.follow(m1);	// Back Right Motor (Slave) Follows Front Right Motor
     	
 		// SmartDashboard
     	
-    	// Autonomous
-    		// Selection
-    		DigitalInput ch1 = new DigitalInput(10);	  // Left Switch Score/Autoline
-    		DigitalInput ch2 = new DigitalInput(10);	  // Middle Switch Score/Autoline
-    		DigitalInput ch3 = new DigitalInput(10);	  // Right Switch Score/Autoline
-    		DigitalInput ch4 = new DigitalInput(10);	  // Null
-    		// Distances
-    		// Angles
-    	
-    
     }
     
 	@Override
@@ -104,9 +156,57 @@ public class Robot extends IterativeRobot {
 		
 		color = DriverStation.getInstance().getAlliance();
 		
-		// Autonomous Distances (Encoder)	
+		// Booleans
+			firstTime = true; // First Part Of Autonomous
+			secondTime = true; // Second Part Of Autonomous
 		
+		// Autonomous Distances (Encoder)	
+			 // Left Side Switch Scoring
+			 	leftDis1 = 0;	//
+			 	leftDis2 = 0;	//
+			 	leftDis3 = 0;	//
+			 	leftDis4 = 0;	//
+			 	leftDis5 = 0;	//	
+			 	leftDis6 = 0;	//
+			 // Middle Left Switch Scoring
+			 	midlDis1 = 0;	//
+			 	midlDis2 = 0;	//
+			 	midlDis3 = 0;	//
+			 	midlDis4 = 0;	//
+			 	midlDis5 = 0;	//
+			 	midlDis6 = 0;	//
+			 // Middle Right Switch Scoring
+			 	midrDis1 = 0;	//
+			 	midrDis2 = 0;	//
+				midrDis3 = 0;	//
+				midrDis4 = 0;	//
+				midrDis5 = 0;	//
+				midrDis6 = 0;	//
+			 // Right Side Switch Scoring
+				rightDis1 = 0;	//
+				rightDis2 = 0;	//
+				rightDis3 = 0;	//
+				rightDis4 = 0;	//
+				rightDis5 = 0;	//
+				rightDis6 = 0;	//
+			 
 		// Autonomous Turn Angles (Gyro)	
+			 // Left Side Switch Scoring
+				leftAng1 = 0;	//
+				leftAng2 = 0;	//
+			 // Middle Left Switch Scoring
+				midlAng1 = 0;	//
+				midlAng2 = 0;	//
+				midlAng3 = 0;	//
+				midlAng4 = 0;	//
+			 // Middle Right Switch	Scoring
+				midrAng1 = 0;	//
+				midrAng2 = 0;	//
+				midrAng3 = 0;	//
+				midrAng4 = 0;	//
+			 // Right Side Switch Scoring
+				rightAng1 = 0;	//
+				rightAng2 = 0;	//
 
 		// Resets
 			leftEnc.reset();
@@ -114,7 +214,6 @@ public class Robot extends IterativeRobot {
 			gyro.reset();
 			step = 1;
 
-		// Booleans
     }
     
 	@Override
