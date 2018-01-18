@@ -28,8 +28,8 @@ public class Robot extends IterativeRobot {
 	@Override
     public void teleopPeriodic() {
 
-    	double lValue = leftStick.getY();	// Left Drive Speed
-    	double rValue = rightStick.getY();	// Right Drive Speed
+    	double lValue = leftStick.getY() * -1;	// Left Drive Speed
+    	double rValue = rightStick.getY() * -1;	// Right Drive Speed
     	driveTrain.tankDrive(lValue, rValue);	// Tank Drive Control
     }
 }
