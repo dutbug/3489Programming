@@ -52,7 +52,8 @@ public class Robot extends IterativeRobot {
 	WPI_TalonSRX m3 = new WPI_TalonSRX(3); // Back Left Motor (Slave)
 	WPI_TalonSRX m4 = new WPI_TalonSRX(4); // Back Right Motor (Slave)
 	WPI_TalonSRX m5 = new WPI_TalonSRX(5); // Climb Motor
-	WPI_TalonSRX m6 = new WPI_TalonSRX(6); // Lift Motor	//**//
+	WPI_TalonSRX m6 = new WPI_TalonSRX(6); // Intake Motor
+	WPI_TalonSRX m6 = new WPI_TalonSRX(7); // Lift Motor	//**//
 	DifferentialDrive driveTrain = new DifferentialDrive(m1, m2);	// Main Drive Train
 	Solenoid s1 = new Solenoid(20, 1); // Lift  //**//
 	Solenoid s2 = new Solenoid(20, 2); // Grip
@@ -931,7 +932,7 @@ public class Robot extends IterativeRobot {
 				s1.set(false); // Move Lifter Up
 				s2.set(true); // Close Gripper
 				intakeOn = true; // Disables Intake
-	    		intakeOff = false; //Disables Intake
+	    			intakeOff = false; // Disables Intake
 			}
 			
 			// Climbed
@@ -944,19 +945,21 @@ public class Robot extends IterativeRobot {
 			
 		// Kill Commands
 			// Kill Lift
-			if (maniStick.getRawButton(10)) {
+			if (maniStick.getRawButton(5)) {
 				killLift = true;
 			}
 			if (killLift == true) {
+				m7.set(0);
 				killLift = false;
 			}
 			
 			// Kill Intake
-			if (maniStick.getRawButton(10)) {
-				killLift = true;
+			if (maniStick.getRawButton(6)) {
+				killIntake = true;
 			}
 			if (killLift == true) {
-				killLift = false;
+				m6.set(0);
+				killIntake = false;
 			}
     }
 }
