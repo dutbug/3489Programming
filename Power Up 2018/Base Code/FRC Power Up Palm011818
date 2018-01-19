@@ -66,19 +66,20 @@ public class Robot extends IterativeRobot {
 	Encoder liftEnc = new Encoder(8, 9, false, Encoder.EncodingType.k2X); // Lift Encoder
 	AnalogGyro gyro = new AnalogGyro(0); // Gyroscope
 	DriverStation.Alliance color; // Alliance Color
-	int step = 1;	// Initial Step Value
+	int step = 1; // Initial Step Value
 	
 	// Autonomous
 		// Selection
-			DigitalInput ch1 = new DigitalInput(10);	// Left Switch Score/Autoline
-			DigitalInput ch2 = new DigitalInput(11);	// Middle Switch Score/Autoline
-			DigitalInput ch3 = new DigitalInput(12);	// Right Switch Score/Autoline
-			DigitalInput ch4 = new DigitalInput(13);	// Null
+			DigitalInput ch1 = new DigitalInput(10); // Left Switch Score/Autoline
+			DigitalInput ch2 = new DigitalInput(11); // Middle Switch Score/Autoline
+			DigitalInput ch3 = new DigitalInput(12); // Right Switch Score/Autoline
+			DigitalInput ch4 = new DigitalInput(13); // Null
 		
 		// Booleans
-			boolean intakeOn;	// Run Intake
-			boolean intakeOff;	// Stop Intake
-			boolean killLift;	// Kills Lifter Commands
+			boolean intakeOn; // Run Intake
+			boolean intakeOff; // Stop Intake
+			boolean killLift; // Kills Lifter Commands
+			boolean killIntake; // Kills Intake Commands
 				
 		// Distances
 			 // Left Side Switch Scoring
