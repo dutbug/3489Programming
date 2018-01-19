@@ -150,9 +150,9 @@ public class Robot extends IterativeRobot {
 		// Camera
 			try {
 				CameraServer.getInstance().startAutomaticCapture();
-				//system.out.println("Cam0");
+				// system.out.println("Cam0");
 			} catch (Exception e) {
-				//system.out.println("Failed Vision");
+				// system.out.println("Failed Vision");
 			}
 				
 		// Gyroscope
@@ -161,8 +161,8 @@ public class Robot extends IterativeRobot {
 			gyro.reset();
 		
 		// Slaves
-			m3.follow(m1);	// Back Left Motor (Slave) Follows Front Left Motor
-			m4.follow(m2);	// Back Right Motor (Slave) Follows Front Right Motor
+			m3.follow(m1); // Back Left Motor (Slave) Follows Front Left Motor
+			m4.follow(m2); // Back Right Motor (Slave) Follows Front Right Motor
     	
 		// SmartDashboard
     	
@@ -175,61 +175,61 @@ public class Robot extends IterativeRobot {
 		
 		// Autonomous Distances (Encoder)	
 			 // Left Side Switch Scoring
-			 	leftDis1 = 0;	//
-			 	leftDis2 = 0;	//
-			 	leftDis3 = 0;	//
-			 	leftDis4 = 0;	//
-			 	leftDis5 = 0;	//	
+			 	leftDis1 = 0; //
+			 	leftDis2 = 0; //
+			 	leftDis3 = 0; //
+			 	leftDis4 = 0; //
+			 	leftDis5 = 0; //	
 			 // Left Side Switch Driving
-			 	leftDis6 = 0;	//
-			 	leftDis7 = 0;	//
+			 	leftDis6 = 0; //
+			 	leftDis7 = 0; //
 			 // Middle Left Switch Scoring
-			 	midlDis1 = 0;	//
-			 	midlDis2 = 0;	//
-			 	midlDis3 = 0;	//
-			 	midlDis4 = 0;	//
-			 	midlDis5 = 0;	//
-			 	midlDis6 = 0;	//
+			 	midlDis1 = 0; //
+			 	midlDis2 = 0; //
+			 	midlDis3 = 0; //
+			 	midlDis4 = 0; //
+			 	midlDis5 = 0; //
+			 	midlDis6 = 0; //
 			 // Middle Right Switch Scoring
-			 	midrDis1 = 0;	//
-			 	midrDis2 = 0;	//
-				midrDis3 = 0;	//
-				midrDis4 = 0;	//
-				midrDis5 = 0;	//
-				midrDis6 = 0;	//
+			 	midrDis1 = 0; //
+			 	midrDis2 = 0; //
+				midrDis3 = 0; //
+				midrDis4 = 0; //
+				midrDis5 = 0; //
+				midrDis6 = 0; //
 			 // Right Side Switch Scoring
-				rightDis1 = 0;	//
-				rightDis2 = 0;	//
-				rightDis3 = 0;	//
-				rightDis4 = 0;	//
-				rightDis5 = 0;	//
+				rightDis1 = 0; //
+				rightDis2 = 0; //
+				rightDis3 = 0; //
+				rightDis4 = 0; //
+				rightDis5 = 0; //
 			 // Right Side Switch Driving
-			 	rightDis6 = 0;	//
-			 	rightDis7 = 0;	//
+			 	rightDis6 = 0; //
+			 	rightDis7 = 0; //
 			 
 		// Autonomous Turn Angles (Gyro)	
 			 // Left Side Switch Scoring
-				leftAng1 = 0;	//
-				leftAng2 = 0;	//
-				leftAng3 = 0;	//
+				leftAng1 = 0; //
+				leftAng2 = 0; //
+				leftAng3 = 0; //
 			 // Left Side Switch Driving
-				leftAng4 = 0;	//
+				leftAng4 = 0; //
 			 // Middle Left Switch Scoring
-				midlAng1 = 0;	//
-				midlAng2 = 0;	//
-				midlAng3 = 0;	//
-				midlAng4 = 0;	//
+				midlAng1 = 0; //
+				midlAng2 = 0; //
+				midlAng3 = 0; //
+				midlAng4 = 0; //
 			 // Middle Right Switch	Scoring
-				midrAng1 = 0;	//
-				midrAng2 = 0;	//
-				midrAng3 = 0;	//
-				midrAng4 = 0;	//
+				midrAng1 = 0; //
+				midrAng2 = 0; //
+				midrAng3 = 0; //
+				midrAng4 = 0; //
 			 // Right Side Switch Scoring
-				rightAng1 = 0;	//
-				rightAng2 = 0;	//
-				rightAng3 = 0;	//
+				rightAng1 = 0; //
+				rightAng2 = 0; //
+				rightAng3 = 0; //
 			 // Right Side Switch Driving
-				rightAng4 = 0;	//
+				rightAng4 = 0; //
 			 //Angle Offset
 				angleOff = .5; // Adjustment Angle For Driving With Gyroscope
 
@@ -243,21 +243,21 @@ public class Robot extends IterativeRobot {
 	@Override
     public void autonomousPeriodic() {
 		
-			double encLD = leftEnc.getDistance() * -1;	// Left Encoder Value
-			double encRD = rightEnc.getDistance() * 1;	// Right Encoder Value
+			double encLD = leftEnc.getDistance() * -1; // Left Encoder Value
+			double encRD = rightEnc.getDistance() * 1; // Right Encoder Value
 			double gyroD = gyro.getAngle();	// Gyroscope Value
 		
 			String gameData;
     	    gameData = DriverStation.getInstance().getGameSpecificMessage();
   
-	if (ch1.get() == false) {	// Left Switch Autonomous Selection
+	if (ch1.get() == false) { // Left Switch Autonomous Selection
 		switch (step) {
-		case 1:	// Decision Method
+		case 1: // Decision Method
 			if(gameData.charAt(0) == 'L') {	// Run Scoring Method
 				s1.set(true);
 				s2.set(true);
 				step++;
-			} else if(gameData.charAt(0) == 'R'){	// Run Driving Method
+			} else if(gameData.charAt(0) == 'R'){ // Run Driving Method
 				s1.set(true);
 				s2.set(true);
 				step = 11;
@@ -359,7 +359,7 @@ public class Robot extends IterativeRobot {
 				step++;
 			}
 			break;
-		case 10:	// Forward ~ 100 in
+		case 10: // Forward ~ 100 in
 			driveTrain.tankDrive(.75, .75);
 			if(gyroD >= angleOff && rightEnc.getDistance() <= leftDis5){
 				driveTrain.tankDrive(.85, .8);
@@ -374,7 +374,7 @@ public class Robot extends IterativeRobot {
 				driveTrain.tankDrive(0, 0);
 			}
 			break;
-		case 11:	// Forward ~ 250 in
+		case 11: // Forward ~ 250 in
 			driveTrain.tankDrive(.75, .75);
 			if(gyroD >= angleOff && rightEnc.getDistance() <= leftDis6){
 				driveTrain.tankDrive(.85, .8);
@@ -389,7 +389,7 @@ public class Robot extends IterativeRobot {
 				step++;
 			}
 			break;
-		case 12:	// Rotate 90°
+		case 12: // Rotate 90°
 			driveTrain.tankDrive(-.75, .75);
 			if (gyroD <= leftAng4) {
 				gyro.reset();
@@ -397,7 +397,7 @@ public class Robot extends IterativeRobot {
 				step++;
 			}
 			break;
-		case 13:	// Forward ~ 100 in
+		case 13: // Forward ~ 100 in
 			driveTrain.tankDrive(.75, .75);
 			if(gyroD >= angleOff && rightEnc.getDistance() <= leftDis7){
 				driveTrain.tankDrive(.85, .8);
@@ -413,14 +413,14 @@ public class Robot extends IterativeRobot {
 			}
 			break;
 		}
-	} else if (ch2.get() == false) {	// Middle Switch Autonomous Selection
+	} else if (ch2.get() == false) { // Middle Switch Autonomous Selection
 		switch (step) {
 		case 1: // Decision Method
 			if(gameData.charAt(0) == 'L') {	// Run Scoring Method
 				s1.set(true);
 				s2.set(true);
 				step++;
-			} else if(gameData.charAt(0) == 'R'){	// Run Driving Method 
+			} else if(gameData.charAt(0) == 'R'){ // Run Driving Method 
 				s1.set(true);
 				s2.set(true);
 				step = 13;
@@ -522,7 +522,7 @@ public class Robot extends IterativeRobot {
 			s1.set(false);
 			step++;
 			break;
-		case 10:	// Reverse ~ 10 in
+		case 10: // Reverse ~ 10 in
 			driveTrain.tankDrive(-.75, -.75);
 			if(gyroD >= angleOff && rightEnc.getDistance() <= midlDis5){
 				driveTrain.tankDrive(.85, .8);
@@ -537,7 +537,7 @@ public class Robot extends IterativeRobot {
 				driveTrain.tankDrive(0, 0);
 			}
 			break;
-		case 11:	// Rotate -90°
+		case 11: // Rotate -90°
 			driveTrain.tankDrive(.65, -.65);
 			if (gyroD <= midlAng4) {
 				gyro.reset();
@@ -545,7 +545,7 @@ public class Robot extends IterativeRobot {
 				step++;
 			}
 			break;
-		case 12:	// Forward ~ 100 in
+		case 12: // Forward ~ 100 in
 			driveTrain.tankDrive(.75, .75);
 			if(gyroD >= angleOff && rightEnc.getDistance() <= midlDis6){
 				driveTrain.tankDrive(.85, .8);
@@ -560,7 +560,7 @@ public class Robot extends IterativeRobot {
 				driveTrain.tankDrive(0, 0);
 			}
 			break;
-		case 13:	// Forward ~ 90 in
+		case 13: // Forward ~ 90 in
 			driveTrain.tankDrive(.75, .75);
 			if(gyroD >= angleOff && rightEnc.getDistance() <= midrDis1){
 				driveTrain.tankDrive(.85, .8);
@@ -576,7 +576,7 @@ public class Robot extends IterativeRobot {
 				step++;
 			}
 			break;
-		case 14:	// Rotate 90°
+		case 14:= // Rotate 90°
 			driveTrain.tankDrive(-.65, 65);
 			if (gyroD >= midrAng1) {
 				gyro.reset();
@@ -584,7 +584,7 @@ public class Robot extends IterativeRobot {
 				step++;
 			}
 			break;
-		case 15:	// Forward ~ 130 in
+		case 15: // Forward ~ 130 in
 			driveTrain.tankDrive(.8, .8);
 			if(gyroD >= angleOff && rightEnc.getDistance() <= midrDis2){
 				driveTrain.tankDrive(.85, .8);
@@ -600,7 +600,7 @@ public class Robot extends IterativeRobot {
 				step++;
 			}
 			break;
-		case 16:	// Rotate -90°
+		case 16: // Rotate -90°
 			driveTrain.tankDrive(-.65, .65);
 			if (gyroD >= midrAng2) {
 				gyro.reset();
@@ -608,7 +608,7 @@ public class Robot extends IterativeRobot {
 				step++;
 			}
 			break;
-		case 17:	// Forward ~ 75 in
+		case 17: // Forward ~ 75 in
 			driveTrain.tankDrive(.65, .65);
 			if(gyroD >= angleOff && rightEnc.getDistance() >= midrDis3){
 				driveTrain.tankDrive(-.8, -.85);
@@ -625,7 +625,7 @@ public class Robot extends IterativeRobot {
 				step++;
 			}
 			break;
-		case 18:	// Rotate -90°
+		case 18: // Rotate -90°
 			driveTrain.tankDrive(-.75, .75);
 			if (gyroD >= midrAng3) {
 				gyro.reset();
@@ -633,7 +633,7 @@ public class Robot extends IterativeRobot {
 				step++;
 			}
 			break;
-		case 19:	// Forward ~ 10 in
+		case 19: // Forward ~ 10 in
 			driveTrain.tankDrive(.75, .75);
 			if(gyroD >= angleOff && rightEnc.getDistance() <= midrDis4){
 				driveTrain.tankDrive(.85, .8);
@@ -648,13 +648,13 @@ public class Robot extends IterativeRobot {
 				step++;
 			}
 			break;
-		case 20:	// Place Cube
+		case 20: // Place Cube
 			driveTrain.tankDrive(0, 0);
 			rightEnc.reset();
 			s1.set(false);
 			step++;
 			break;
-		case 21:	// Reverse ~ 10 in
+		case 21: // Reverse ~ 10 in
 			driveTrain.tankDrive(-.75, -.75);
 			if(gyroD >= angleOff && rightEnc.getDistance() <= midrDis5){
 				driveTrain.tankDrive(.85, .8);
@@ -669,7 +669,7 @@ public class Robot extends IterativeRobot {
 				driveTrain.tankDrive(0, 0);
 			}
 			break;
-		case 22:	// Rotate 90°
+		case 22: // Rotate 90°
 			driveTrain.tankDrive(.65, -.65);
 			if (gyroD <= midrAng4) {
 				gyro.reset();
@@ -677,7 +677,7 @@ public class Robot extends IterativeRobot {
 				step++;
 			}
 			break;
-		case 23:	// Forward ~ 100 in
+		case 23: // Forward ~ 100 in
 			driveTrain.tankDrive(.75, .75);
 			if(gyroD >= angleOff && rightEnc.getDistance() <= midrDis6){
 				driveTrain.tankDrive(.85, .8);
@@ -693,14 +693,14 @@ public class Robot extends IterativeRobot {
 			}
 			break;
 		}
-	} else if (ch3.get() == false) {	// Right Switch Autonomous Selection
+	} else if (ch3.get() == false) { // Right Switch Autonomous Selection
 		switch (step) {
 		case 1: // Decision Method
 			if(gameData.charAt(0) == 'L') {	// Run Scoring Method
 				s1.set(true);
 				s2.set(true);
 				step++;
-			} else if(gameData.charAt(0) == 'R'){	// Run Driving Method 
+			} else if(gameData.charAt(0) == 'R'){ // Run Driving Method 
 				s1.set(true);
 				s2.set(true);
 				step = 11;
@@ -802,7 +802,7 @@ public class Robot extends IterativeRobot {
 				step++;
 			}
 			break;
-		case 10:	// Forward ~ 100 in
+		case 10: // Forward ~ 100 in
 			driveTrain.tankDrive(.75, .75);
 			if(gyroD >= angleOff && rightEnc.getDistance() <= rightDis5){
 				driveTrain.tankDrive(.85, .8);
@@ -817,7 +817,7 @@ public class Robot extends IterativeRobot {
 				driveTrain.tankDrive(0, 0);
 			}
 			break;
-		case 11:	// Forward ~ 250 in
+		case 11: // Forward ~ 250 in
 			driveTrain.tankDrive(.75, .75);
 			if(gyroD >= angleOff && rightEnc.getDistance() <= rightDis6){
 				driveTrain.tankDrive(.85, .8);
@@ -832,7 +832,7 @@ public class Robot extends IterativeRobot {
 				step++;
 			}
 			break;
-		case 12:	// Rotate -90°
+		case 12: // Rotate -90°
 			driveTrain.tankDrive(.75, -.75);
 			if (gyroD <= rightAng4) {
 				gyro.reset();
@@ -840,7 +840,7 @@ public class Robot extends IterativeRobot {
 				step++;
 			}
 			break;
-		case 13:	// Forward ~ 100 in
+		case 13: // Forward ~ 100 in
 			driveTrain.tankDrive(.75, .75);
 			if(gyroD >= angleOff && rightEnc.getDistance() <= rightDis7){
 				driveTrain.tankDrive(.85, .8);
@@ -856,7 +856,7 @@ public class Robot extends IterativeRobot {
 			}
 			break;
 		}
-	} else if (ch4.get() == false) {	// Neutral Autonomous 
+	} else if (ch4.get() == false) { // Neutral Autonomous 
 		driveTrain.tankDrive(0, 0);
 		}
 	}
@@ -874,9 +874,9 @@ public class Robot extends IterativeRobot {
 		
 		// Motor Controllers
 			// Differential Drive Controls
-	    	double lValue = leftStick.getY() * -1;	// Left Drive Speed
-	    	double rValue = rightStick.getY() * -1;	// Right Drive Speed
-	    	driveTrain.tankDrive(lValue, rValue);	// Tank Drive Control
+	    	double lValue = leftStick.getY() * -1; // Left Drive Speed
+	    	double rValue = rightStick.getY() * -1; // Right Drive Speed
+	    	driveTrain.tankDrive(lValue, rValue); // Tank Drive Control
 	    	
 	    	// Intake
 	    	if (leftStick.getRawButton(5) && intakeOff == true) {
@@ -897,30 +897,30 @@ public class Robot extends IterativeRobot {
     	// Pneumatics
 	    	// Lifter
 	    	if (leftStick.getRawButton(2)) {
-	    		s1.set(true);	// Moves Lifter Down
+	    		s1.set(true); // Moves Lifter Down
 	    	} else if (rightStick.getRawButton(2)) {
-	    		s1.set(false);	// Moves Lifter Up
+	    		s1.set(false); // Moves Lifter Up
 	    	}
 	    	
 	    	// Gripper
 	    	if (leftStick.getRawButton(3)) {
-	    		s2.set(true);	// Closes Gripper
+	    		s2.set(true); // Closes Gripper
 	    	}else if (rightStick.getRawButton(3)) {
-	    		s2.set(false);	// Opens Gripper
+	    		s2.set(false); // Opens Gripper
 	    	}
 	    	
 	    	// Gear Shifter
 	    	if (leftStick.getRawButton(1)) {
-	    		s3.set(true);	// Change Speed To 100%
+	    		s3.set(true); // Change Speed To 100%
 	    	}else if (rightStick.getRawButton(1)) {
-	    		s3.set(false);	// Change Speed To 50%
+	    		s3.set(false); // Change Speed To 50%
 	    	}
 	    	
 	    	// Camrea POV
 	    	if (leftStick.getRawButton(1)) {
-	    		s4.set(true);	// Move Camera POV Down
+	    		s4.set(true); // Move Camera POV Down
 	    	}else if (rightStick.getRawButton(1)) {
-	    		s4.set(false);	// Move Camera POV Up
+	    		s4.set(false); // Move Camera POV Up
 	    	}
 	    	
 	    // Encoder Presets
@@ -928,10 +928,10 @@ public class Robot extends IterativeRobot {
 	    // Limit Switches
 	    	// Cube Pickup
 			if (autoCube.get() == false) {
-				s1.set(false);	// Move Lifter Up
-				s2.set(true);	// Close Gripper
-				intakeOn = true;	// Disables Intake
-	    		intakeOff = false;	//Disables Intake
+				s1.set(false); // Move Lifter Up
+				s2.set(true); // Close Gripper
+				intakeOn = true; // Disables Intake
+	    		intakeOff = false; //Disables Intake
 			}
 			
 			// Climbed
@@ -944,6 +944,14 @@ public class Robot extends IterativeRobot {
 			
 		// Kill Commands
 			// Kill Lift
+			if (maniStick.getRawButton(10)) {
+				killLift = true;
+			}
+			if (killLift == true) {
+				killLift = false;
+			}
+			
+			// Kill Intake
 			if (maniStick.getRawButton(10)) {
 				killLift = true;
 			}
