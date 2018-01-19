@@ -7,22 +7,21 @@ import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 
 public class Robot extends IterativeRobot {
 	
-	WPI_TalonSRX m0 = new WPI_TalonSRX(0);	// Front Left Motor
-	WPI_TalonSRX m1 = new WPI_TalonSRX(1);	// Front Right Motor
-	WPI_TalonSRX m2 = new WPI_TalonSRX(2);	// Back Left Motor (Slave)
-	WPI_TalonSRX m3 = new WPI_TalonSRX(3);	// Back Right Motor (Slave)
+	WPI_TalonSRX m1 = new WPI_TalonSRX(1);	// Front Left Motor
+	WPI_TalonSRX m2 = new WPI_TalonSRX(2);	// Front Right Motor
+	WPI_TalonSRX m3 = new WPI_TalonSRX(3);	// Back Left Motor (Slave)
+	WPI_TalonSRX m4 = new WPI_TalonSRX(4);	// Back Right Motor (Slave)
 
-	DifferentialDrive driveTrain = new DifferentialDrive(m0, m1);	// Main Drive Train
+	DifferentialDrive driveTrain = new DifferentialDrive(m1, m2);	// Main Drive Train
 
 	Joystick leftStick = new Joystick(0);	// Left Driver Joystick
 	Joystick rightStick = new Joystick(1);	// Right Driver Joystick
-	Joystick maniStick = new Joystick(2);	// Manipulator Joystick
 	
 	@Override
     public void robotInit() {
     	
-    	m2.follow(m0);	// Back Left Motor (Slave) Follows Front Left Motor
-    	m3.follow(m1);	// Back Right Motor (Slave) Follows Front Right Motor
+    	m3.follow(m1);	// Back Left Motor (Slave) Follows Front Left Motor
+    	m4.follow(m2);	// Back Right Motor (Slave) Follows Front Right Motor
     }
     
 	@Override
