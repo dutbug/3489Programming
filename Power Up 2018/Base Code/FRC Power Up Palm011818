@@ -6,24 +6,27 @@ Alex 01/18/2018 - Palm Base Code
 Left Stick Buttons
  * 1 - Camera POV Up
  * 7 - Shift Gears 50%
+ * Y - Left Drive
 
 Right Stick Buttons
  * 1 - Camera POV Down
  * 7 - Shift Gears 100%
+ * Y - Right Drive
 
 Manipulator Stick Buttons
- * 1 - Open Gripper / Intake
- * 2 - Close Gripper / Outtake
- * 3 - Lift Retractor
- * 4 - Lower Retractor
+ * 1 - Cube Intake		
+ * 2 - Cube Outtake		
+ * 3 - Open Gripper			
+ * 4 - Close Gripper			
  * 5 - Kill Lift
  * 6 - Kill Intake
  * 7 - Floor Position
  * 8 - Switch Position 
- * 9 - Low Scale Position 
- * 10 - High Scale Position
+ * 9 - Low Scale Position	// Remove Maybe ---> Lift Retractor
+ * 10 - High Scale Position	// Remove Maybe ---> Lower Retractor
  * 11 - Climber Up
  * 12 - Climber Down
+ * Y - Lifter
 */
 
 import edu.wpi.first.wpilibj.AnalogGyro;
