@@ -1,0 +1,1195 @@
+package org.usfirst.frc.team3489.robot;
+
+import com.ctre.CANTalon;
+
+import edu.wpi.first.wpilibj.AnalogGyro;
+import edu.wpi.first.wpilibj.AnalogInput;
+import edu.wpi.first.wpilibj.CameraServer;
+import edu.wpi.first.wpilibj.DigitalInput;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.Encoder;
+import edu.wpi.first.wpilibj.IterativeRobot;
+import edu.wpi.first.wpilibj.Joystick;
+import edu.wpi.first.wpilibj.PowerDistributionPanel;
+import edu.wpi.first.wpilibj.RobotDrive;
+import edu.wpi.first.wpilibj.Solenoid;
+import edu.wpi.first.wpilibj.Talon;
+import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+
+/*
+ * John/Alex 04/20/2017 - Base Code
+ * This code will run the test and final chassis for Houston
+ * The prototype chassis requires 2 motors to be inverted (m2 & m3) See Alex's comment.
+ * 04/20/17 Added camera movement - changed auto numbers to match printed papers.
+ */
+
+/*Left Buttons In Use
+ * 7 - Shift Gears 50%
+ */
+/*Right Buttons
+ * 7 - Shift Gears 100%
+ */
+/*Manipulator Buttons In Use
+ * 1 - Open Gripper
+ * 2 - Close Gripper
+ * 3 - Arm Up
+ * 4 - Arm Down
+ * 5 - Want Gear LED
+ * 6 - Want Ball LED
+ * 7 - Shoot Pos
+ * 8 - NA
+ * 9 - Kill Shoot
+ * 10 - Kill Drive
+ * 11 - Start Hopper/Shooter
+ * 12 - Stop Hopper/Shooter
+*/
+public class Robot extends IterativeRobot {
+	CANTalon m1 = new CANTalon(1); // Front Left Motor
+	CANTalon m2 = new CANTalon(2); // Front Right Motor
+	CANTalon m3 = new CANTalon(3); // Back Left Motor
+	CANTalon m4 = new CANTalon(4); // Back Right Motor
+	CANTalon m5 = new CANTalon(5); // Climber Motor
+	CANTalon m6 = new CANTalon(6); // Hopper Encoder Motor
+	CANTalon m7 = new CANTalon(7); // Shooter Motor
+	CANTalon m8 = new CANTalon(8); // Climber Motor 2
+	Talon lights = new Talon(9); // Signal LEDS
+	RobotDrive myRobot = new RobotDrive(m3, m1, m2, m4); // Chassis Motors
+	Joystick debugStick = new Joystick(0); // Programmer Test Stick
+	Joystick leftStick = new Joystick(1); // Left Drive Stick
+	Joystick rightStick = new Joystick(2); // Right Drive Stick
+	Joystick maniStick = new Joystick(3); // Manipulator Stick
+	Solenoid gripperClaw = new Solenoid(20, 1); // Claw
+	Solenoid gripperArm = new Solenoid(20, 2); // Arm
+	Solenoid gearShift = new Solenoid(20, 3); // Gear Shifter
+	Solenoid camPOV = new Solenoid(20, 4); // Controls Camera Angle
+	Encoder hopper = new Encoder(4, 5, false, Encoder.EncodingType.k2X); // Hopper Encoder
+	Encoder rightEnc = new Encoder(6, 7, false, Encoder.EncodingType.k2X); // Right Drive Encoder
+	Encoder leftEnc = new Encoder(8, 9, false, Encoder.EncodingType.k2X); // Left Drive Encoder
+	AnalogGyro gyro = new AnalogGyro(0); // Gyroscope Sensor
+	DigitalInput gripperDown = new DigitalInput(0); // Hall Sensor
+	DigitalInput autoGear = new DigitalInput(3); // Auto Lift Arm With Gear
+	DigitalInput dropGear = new DigitalInput(2); // Ready To Drop Gear
+	DigitalInput topRope = new DigitalInput(1); // Fully Climbed Rope
+	PowerDistributionPanel PDP = new PowerDistributionPanel(0); // Robot PDP
+	DriverStation.Alliance color; // = DriverStation.getInstance().getAlliance();
+
+	// Drive Values/Gyroscope
+	double rValue = 0; // Right JoyStick Value
+	double lValue = 0; // Left JoyStick Value
+	double tValue = 0; // Test JoyStick Value
+	double speed = 1; // Overall Drive Speed Value
+	static final double kVoltsPerDegreePerSecond = 0.0128; // Gyroscope Value
+
+	// Hopper/Shooter Values
+	boolean hRun = false; // Run The Hopper
+	boolean hStop = false; // Stop The Hopper
+	boolean hJam = false; // Unjam The Hopper
+	boolean gShoot = false; // Go Shooting
+	boolean sShoot = false; // Stop Shooting
+	int hInit = 0; // Default Jam Count
+	int hInitMax = 4; // Max Jam Count
+	int step = 1; // Initial Step Value
+	double dJam; // Hopper Distance To Unjam
+	double hRev; // Zero Position
+	double gyroD = gyro.getAngle();
+	boolean shootPos = false; // Set Up Shooting Position
+	boolean killDrive = false; // Kills Shooter Functions
+	boolean killShoot = false; // Kills Drive Functions
+	double isTime; // Initial Time Shooter
+	double csTime; // Current Time Shooter
+	double ihTime; // Initial Time Hopper
+	double chTime; // Current Time Hopper
+
+	// DigitalInputs can be changed to autonomous plan names (middle, right, left, etc.)
+	
+	  //DigitalInput chickenHead1 = new DigitalInput(11); //Blue Boiler Shoot
+	  //DigitalInput chickenHead2 = new DigitalInput(12); //Red Boiler Shoot
+	  //DigitalInput chickenHead3 //Do Nothing DigitalInput
+	  DigitalInput chickenHead4 = new DigitalInput(14); //Right Place Gear, Cross Line
+	  DigitalInput chickenHead5 = new DigitalInput(15); //Center Place Gear, Cross Line 
+	  DigitalInput chickenHead6 = new DigitalInput(16); //Left Place Gear, Cross Line
+	  //DigitalInput chickenHead7 = new DigitalInput(17); //Blue Boiler Shoot, Place Gear, Cross Line 
+	  //DigitalInput chickenHead8 = new DigitalInput(18); //Red Boiler Shoot, Place Gear, Cross Line
+	  //DigitalInput chickenHead9 = new DigitalInput(19); 
+	  //DigitalInput chickenHead10 = new DigitalInput(20);
+	  //DigitalInput chickenHead10 = new DigitalInput(20); Dial missing input
+	 
+	  DigitalInput chickenHead11 = new DigitalInput(21); // left (feeder) side
+	  DigitalInput chickenHead12 = new DigitalInput(22); // right (boiler) side
+
+	// Autonomous
+	 boolean firstTime = true; // First Part Of Autonomous
+	 boolean secondTime = false; // Second Part Of Autonomous
+	 boolean thirdTime = false; // Third Part Of Autonomous
+		//Distances
+		double boilDisR1;
+		double boilDisR2;
+		double boilDisR3;
+		double boilDisR4;
+		double boilDisB1;
+		double boilDisB2;
+		double boilDisB3;
+		double boilDisB4;
+		double feedDisR1;
+		double feedDisR2;
+		double feedDisR3;
+		double feedDisR4;
+		double feedDisB1;
+		double feedDisB2;
+		double feedDisB3;
+		double feedDisB4;
+		double centDisRB1;
+		double centDisRB2;
+		double centDisR3;
+		double centDisB3;
+
+		//Angles
+		double gyroAdjAng; 
+		double boilAngR1;		
+		double boilAngR2;
+		double boilAngB1;
+		double boilAngB2;
+		double feedAngR1;
+		double feedAngR2;
+		double feedAngB1;
+		double feedAngB2;
+		double centAngR1;
+		double centAngB1;
+		double hopperDis1;
+	
+	// Motor Controls Test
+	int cMotor = 0; // Default Motor Count
+	int cMotorMax = 8; // Max Motor Count
+
+	@Override
+	public void robotInit() {
+		// Safety
+		myRobot.setSafetyEnabled(false);
+
+		// Camera
+		try {
+			CameraServer.getInstance().startAutomaticCapture();
+			//system.out.println("Cam0 :D");
+		} catch (Exception e) {
+			//system.out.println("Failed Vision");
+		}
+
+		String ver = "Houston 4/20/17";  //ver Changed by John
+		//system.out.println(ver);
+		// Gyroscope
+		gyro.setSensitivity(kVoltsPerDegreePerSecond);
+		gyro.calibrate();
+		gyro.initGyro();
+		gyro.reset();
+
+		// SmartDashboard
+		SmartDashboard.putBoolean("Speed", false);
+		SmartDashboard.putNumber("MadeLaser", 0);
+	}
+
+	@Override
+	public void disabledInit() {
+		//super.disabledInit();
+	}
+	public void disabledPeriodic() {
+		// Motors
+		m1.set(0);
+		m2.set(0);
+		m3.set(0);
+		m4.set(0);
+		m5.set(0);
+		m6.set(0);
+		m7.set(0);
+		m8.set(0);
+
+		// Hopper/Shooter Values
+		hRun = false; // Run The Hopper
+		hStop = false; // Stop The Hopper
+		hJam = false; // Unjam The Hopper
+		gShoot = false; // Go Shooting
+		sShoot = false; // Stop Shooting
+		hInit = 0; // Default Jam Count
+		hInitMax = 4; // Max Jam Count
+		shootPos = false; // Set Up Shooting Position
+		killShoot = false; // Kills Shooting Functions
+		killDrive = false; // Kills Driving Functions
+		
+		step = 1;
+		// Motor Controls Test
+		cMotor = 0; // Default Motor Count
+		cMotorMax = 8; // Max Motor Count
+	}
+	
+	@Override
+	public void autonomousInit() {
+
+		color = DriverStation.getInstance().getAlliance();
+
+		// Autonomous Distances (Encoder)	
+			// Red Boiler Side
+			boilDisR1 = 520; // Drive Towards Center Of Field 
+			boilDisR2 = 190; // Drive Onto The Peg 				 //Old Code: 150
+			boilDisR3 = -125; // Back Off The Peg 
+			boilDisR4 = 355; // Drive Towards Boiler To Shoot 
+			// Blue Boiler Side
+			boilDisB1 = 563; //Drive Towards Center Of Field	 // Old Code: 520
+			boilDisB2 = 170; //Drive Onto The Peg	 			 // Old Code: 200
+			boilDisB3 = -125; //Back Off The Peg				 // Old Code: 125
+			boilDisB4 = 325; //Drive Towards Boiler To Shoot	 // Old Code: 430
+			// Red Feeder Side
+			feedDisR1 = 575; //Drive Towards Center Of Field	 // Old Code: 550 
+			feedDisR2 = 200; //Drive Onto The Peg 
+			feedDisR3 = -125; //Back Off The Peg 
+			feedDisR4 = 650; //Drive Into Center Of Field
+			// Blue Feeder Side
+			feedDisB1 = 535; // Drive Towards Center Of Field 	 //Old Code: 520
+			feedDisB2 = 200; // Drive Onto The Peg 
+			feedDisB3 = -125; // Back Off The Peg 
+			feedDisB4 = 650; // Drive Into Center Of Field
+			// Red & Blue Center Side 
+			centDisRB1 = 500; // Drive Onto The Peg
+			centDisRB2 = -185; // Back Off The Peg 
+			// Red Center Side
+			centDisR3 = 610; // Drive Towards Boiler To Shoot	// Old Code: 550
+			// Blue Center Side
+			centDisB3 = 560; // Drive Towards Boiler To Shoot	// Old Code: 500
+			// Hopper Distance
+			hopperDis1 = 300; // Hopper Spin
+
+		// Autonomous Turn Angles (Gyroscope)
+			// Red Boiler Side
+			boilAngR1 = 51; // Turn Towards The Airship		// Old Code: 49
+			boilAngR2 = -169; // Turn Towards The Boiler	// Old Code: -167
+			// Blue Boiler Side
+			boilAngB1 = -48.5; // Turn Towards The Airship		// Old Code: -46.5
+			boilAngB2 = -137; // Turn Towards The Boiler		// Old Code: -135
+			// Red Feeder Side
+			feedAngR1 = -48.5; // Turn Towards The Airship		// Old Code: -43.5
+			feedAngR2 = 58.5; // Turn Towards Center Of Field
+			// Blue Feeder Side
+			feedAngB1 = 48.5; // Turn Towards The Airship		// Old Code: 43.5
+			feedAngB2 = -42.5; // Turn Towards Center of Field
+			// Red Center Side
+			centAngR1 = -105.5; // Turn Towards The Boiler 		// Old Code: -100.5
+			// Blue Center Side
+			centAngB1 = 114.5; // Turn Towards The Boiler		// Old Code: 109.5
+			// Adjustments
+			gyroAdjAng = .5; // Adjustment Angle For Driving With Gyroscope
+		
+		// Resets
+		leftEnc.reset();
+		rightEnc.reset();
+		gyro.reset();
+		gripperClaw.set(false); // Close gripper
+		//gearShift.set(false); // Low speed
+		step = 1;
+		
+		// Booleans
+		firstTime = true; // First Part Of Autonomous
+		secondTime = true; // Second Part Of Autonomous
+		thirdTime = false; // Third Part Of Autonomous
+	}
+
+	@Override
+	public void autonomousPeriodic() {
+		//double encLD = leftEnc.getDistance() * -1; // encLD is the value of the left encoder
+		double encRD = rightEnc.getDistance() * 1; // encRD is the value on the right encoder
+		double gyroD = gyro.getAngle(); // gyroD is the angle of the gyro
+		csTime = Timer.getFPGATimestamp();
+
+		if (chickenHead4.get() == false) { //chickenHead12 on 3-prong, 4 on normal
+			if (dropGear.get() == false && color == DriverStation.Alliance.Red && firstTime == true) {
+				System.out.println(rightEnc.getDistance());
+				step = 5;
+			}
+			if(dropGear.get() == false && color == DriverStation.Alliance.Blue && secondTime == true){
+				System.out.println(rightEnc.getDistance());
+				step = 13;
+			}
+			switch (step) { // Boiler Side Gear and Shoot - Right side of chickenHead
+			case 1:
+				rightEnc.reset();
+				gyro.reset();
+				if (color == DriverStation.Alliance.Red) {
+					step++;
+				} else if (color == DriverStation.Alliance.Blue) {
+					step = 10;
+				}
+				break;
+			case 2: // Red Side Alliance
+				////system.out.println("6 Stand Red");
+				myRobot.tankDrive(.75, .75);
+				if(gyroD >= gyroAdjAng && rightEnc.getDistance() <= boilDisR1){
+					//system.out.println("adjust right");
+					myRobot.tankDrive(.85, .8);
+				}
+				if(gyroD <= -gyroAdjAng && rightEnc.getDistance() <= boilDisR1){
+					//system.out.println("adjust left");
+					myRobot.tankDrive(.8, .85);
+				}
+				if(gyroD <= gyroAdjAng && gyroD >= -gyroAdjAng && rightEnc.getDistance() <= boilDisR1){
+					myRobot.tankDrive(.8, .8);
+				}
+				if (encRD > boilDisR1) { //03237 2:25 Jake Alex changes auto dis to 480 from 520
+					gyro.reset();
+					step++;
+				}
+				break;
+			case 3:
+				myRobot.tankDrive(-.65, .65);
+				if (gyroD >= boilAngR1) {
+					rightEnc.reset();
+					step++;
+				}
+				break;
+			case 4:
+				myRobot.tankDrive(.8, .8);
+				if(gyroD >= gyroAdjAng && rightEnc.getDistance() <= boilDisR2){
+					//system.out.println("adjust right");
+					myRobot.tankDrive(.85, .8);
+				}
+				if(gyroD <= -gyroAdjAng && rightEnc.getDistance() <= boilDisR2){
+					//system.out.println("adjust left");
+					myRobot.tankDrive(.8, .85);
+				}
+				if(gyroD <= gyroAdjAng && gyroD >= -gyroAdjAng && rightEnc.getDistance() <= boilDisR2){
+					myRobot.tankDrive(.8, .8);
+				}
+				if (encRD > boilDisR2) {
+					//gyro.reset();
+					step++;
+				}
+				break;
+			case 5:
+				myRobot.tankDrive(0, 0);
+				firstTime = false;
+				rightEnc.reset();
+				gripperClaw.set(true);
+				step++;
+				break;
+			case 6:
+				myRobot.tankDrive(-.65, -.65);
+				//Jake John 041017
+				//Added gyro to increase accuracy of boiler
+				if(gyroD >= gyroAdjAng && rightEnc.getDistance() >= boilDisR3){
+					//system.out.println("adjust right");
+					myRobot.tankDrive(-.8, -.85);
+				}
+				if(gyroD <= -gyroAdjAng && rightEnc.getDistance() >= boilDisR3){
+					//system.out.println("adjust left");
+					myRobot.tankDrive(-.85, -.8);
+				}
+				if(gyroD <= gyroAdjAng && gyroD >= -gyroAdjAng && rightEnc.getDistance() >= boilDisR3){
+					myRobot.tankDrive(-.8, -.8);
+				}
+				if (encRD < boilDisR3) {
+					gripperClaw.set(false);
+					gyro.reset();
+					step++;
+				}
+				break;
+			case 7:
+				myRobot.tankDrive(.75, -.75);
+				if (gyroD <= boilAngR2) {
+					m7.set(-1);
+					gyro.reset();
+					rightEnc.reset();
+					step++;
+				}
+				break;
+			case 8:
+				myRobot.tankDrive(.75, .75);
+				if(gyroD >= gyroAdjAng && rightEnc.getDistance() <= boilDisR4){
+					//system.out.println("adjust right");
+					myRobot.tankDrive(.85, .8);
+				}
+				if(gyroD <= -gyroAdjAng && rightEnc.getDistance() <= boilDisR4){
+					//system.out.println("adjust left");
+					myRobot.tankDrive(.8, .85);
+				}
+				if(gyroD <= gyroAdjAng && gyroD >= -gyroAdjAng && rightEnc.getDistance() <= boilDisR4){
+					myRobot.tankDrive(.8, .8);
+				}
+				if (encRD > boilDisR4) {
+					step++;
+				}
+				break;
+			case 9:
+				myRobot.tankDrive(0, 0);
+				if (PDP.getCurrent(15) <= 3) {
+					m6.set(-.55);
+				}
+				if (PDP.getCurrent(15) >= 3 && hJam == false) {
+					if (hInit > hInitMax) {
+						hRun = false;
+						hJam = true;
+						isTime = Timer.getFPGATimestamp();
+					} else {
+						hInit = hInit + 1;
+					}
+				}
+				if (hJam == true) {
+					m6.set(.7);
+					if (hJam == true && chTime > ihTime + .05) {
+						hJam = false;
+						hRun = true;
+						hInit = 0;
+					}
+				}
+				if (hopper.getDistance() >= 3000) {
+					m7.set(0);
+					m6.set(0);
+				}
+				break;
+			case 10: // Blue Alliance
+				//system.out.println("6 Stand Blue");
+				myRobot.tankDrive(.75, .75);
+				if(gyroD >= gyroAdjAng && rightEnc.getDistance() <= boilDisB1){
+					//system.out.println("adjust right");
+					myRobot.tankDrive(.85, .8);
+				}
+				if(gyroD <= -gyroAdjAng && rightEnc.getDistance() <= boilDisB1){
+					//system.out.println("adjust left");
+					myRobot.tankDrive(.8, .85);
+				}
+				if(gyroD <= gyroAdjAng && gyroD >= -gyroAdjAng && rightEnc.getDistance() <= boilDisB1){
+					myRobot.tankDrive(.8, .8);
+				}
+				if (encRD > boilDisB1) { //032317 2:22 Jake Alex changed distance to 480 from 520
+					myRobot.tankDrive(0, 0);
+					gyro.reset();
+					step++;
+				}
+				break;
+			case 11:
+				myRobot.tankDrive(.65, -.65);
+				if (gyroD <= boilAngB1) {
+					myRobot.tankDrive(0, 0);
+					gyro.reset();
+					rightEnc.reset();
+					step++;
+				}
+				break;
+			case 12:
+				myRobot.tankDrive(.65, .65);
+				if(gyroD >= gyroAdjAng && rightEnc.getDistance() <= boilDisB2){
+					//system.out.println("adjust right");
+					myRobot.tankDrive(.85, .8);
+				}
+				if(gyroD <= -gyroAdjAng && rightEnc.getDistance() <= boilDisB2){
+					//system.out.println("adjust left");
+					myRobot.tankDrive(.8, .85);
+				}
+				if(gyroD <= gyroAdjAng && gyroD >= -gyroAdjAng && rightEnc.getDistance() <= boilDisB2){
+					myRobot.tankDrive(.8, .8);
+				}
+				if (encRD > boilDisB2) {
+					myRobot.tankDrive(0, 0);
+					//gyro.reset();
+					step++;
+				}
+				break;
+			case 13:
+				myRobot.tankDrive(0, 0);
+				secondTime = false;
+				rightEnc.reset();
+				gripperClaw.set(true);
+				step++;
+				break;
+			case 14:
+				myRobot.tankDrive(-.65, -.65);
+				//Jake John 041017
+				//Added gyro to increase accuracy of boiler
+				if(gyroD >= gyroAdjAng && rightEnc.getDistance() >= boilDisB3){
+					//system.out.println("adjust right");
+					myRobot.tankDrive(-.8, -.85);
+				}
+				if(gyroD <= -gyroAdjAng && rightEnc.getDistance() >= boilDisB3){
+					//system.out.println("adjust left");
+					myRobot.tankDrive(-.85, -.8);
+				}
+				if(gyroD <= gyroAdjAng && gyroD >= -gyroAdjAng && rightEnc.getDistance() >= boilDisB3){
+					myRobot.tankDrive(-.8, -.8);
+				}
+				if (encRD < boilDisB3) {
+					gripperClaw.set(false);
+					gyro.reset();
+					step++;
+				}
+				break;
+			case 15:
+				myRobot.tankDrive(.75, -.75);
+				m7.set(-1);
+				if (gyroD <= boilAngB2) {
+					myRobot.tankDrive(0, 0);
+					rightEnc.reset();
+					gyro.reset();
+					step++;
+				}
+				break;
+			case 16:
+				if(gyroD >= gyroAdjAng && rightEnc.getDistance() <= boilDisB4){
+					//system.out.println("adjust right");
+					myRobot.tankDrive(.85, .8);
+				}
+				if(gyroD <= -gyroAdjAng && rightEnc.getDistance() <= boilDisB4){
+					//system.out.println("adjust left");
+					myRobot.tankDrive(.8, .85);
+				}
+				if(gyroD <= gyroAdjAng && gyroD >= -gyroAdjAng && rightEnc.getDistance() <= boilDisB4){
+					myRobot.tankDrive(.8, .8);
+				}
+				myRobot.tankDrive(.75, .75);
+				if (encRD > boilDisB4) {
+					step++;
+				}
+				break;
+			case 17:
+				myRobot.tankDrive(0, 0);
+				if (PDP.getCurrent(15) <= 3) {
+					m6.set(-.5);
+				}
+				if (PDP.getCurrent(15) >= 3 && hJam == false) {
+					if (hInit > hInitMax) {
+						hRun = false;
+						hJam = true;
+						isTime = Timer.getFPGATimestamp();
+					} else {
+						hInit = hInit + 1;
+					}
+				}
+				if (hJam == true) {
+					m6.set(.7);
+					if (hJam == true && chTime > ihTime + .05) {
+						hJam = false;
+						hRun = true;
+						hInit = 0;
+					}
+				}
+				if (hopper.getDistance() >= 3000) {
+					m7.set(0);
+					m6.set(0);
+				}
+				break;
+			}
+		} else if (chickenHead6.get() == false) { //chickenHead 11 on 3 prong, 6 on normal
+			if (dropGear.get() == false && color == DriverStation.Alliance.Red && firstTime == true) {
+				step = 5;
+			}
+			if(dropGear.get() == false && color == DriverStation.Alliance.Blue && secondTime == true){
+				step = 12;
+			}
+			switch (step) { // Feed Side gear drop & shoot - Left side of chickenHead
+			case 1:
+				rightEnc.reset();
+				gyro.reset();
+				if (color == DriverStation.Alliance.Red) {
+					step++;
+				} else if (color == DriverStation.Alliance.Blue) {
+					step = 9;
+				}
+				break;
+			case 2: // Red Alliance
+				////system.out.println("4 Pit Red");
+				myRobot.tankDrive(.75, .75);
+				if(gyroD >= gyroAdjAng && rightEnc.getDistance() <= feedDisR1){
+					//system.out.println("adjust right");
+					myRobot.tankDrive(.85, .8);
+				}
+				if(gyroD <= -gyroAdjAng && rightEnc.getDistance() <= feedDisR1){
+					//system.out.println("adjust left");
+					myRobot.tankDrive(.8, .85);
+				}
+				if(gyroD <= gyroAdjAng && gyroD >= -gyroAdjAng && rightEnc.getDistance() <= feedDisR1){
+					myRobot.tankDrive(.8, .8);
+				}
+				
+				if (rightEnc.getDistance() > feedDisR1) { //040117 Jake Alex increased speed from 450
+					myRobot.tankDrive(0, 0);
+					step++;
+				}
+				break;
+			case 3:
+				myRobot.tankDrive(.65, -.65);
+				if (gyroD <= feedAngR1) {
+					rightEnc.reset();
+					step++;
+				}
+				break;
+			case 4:
+				myRobot.tankDrive(.65, .65);
+				if(gyroD >= gyroAdjAng && rightEnc.getDistance() <= feedDisR2){
+					//system.out.println("adjust right");
+					myRobot.tankDrive(.85, .8);
+				}
+				if(gyroD <= -gyroAdjAng && rightEnc.getDistance() <= feedDisR2){
+					//system.out.println("adjust left");
+					myRobot.tankDrive(.8, .85);
+				}
+				if(gyroD <= gyroAdjAng && gyroD >= -gyroAdjAng && rightEnc.getDistance() <= feedDisR2){
+					myRobot.tankDrive(.8, .8);
+				}
+				if (encRD > feedDisR2) {
+					myRobot.tankDrive(0, 0);
+					rightEnc.reset();
+					step++;
+				}
+				break;
+			case 5:
+				gripperClaw.set(true);
+				firstTime = false;
+				myRobot.tankDrive(-.65, -.65);
+				if (encRD < feedDisR3) {
+					rightEnc.reset();
+					gyro.reset();
+					step++;
+				}
+				break;
+			case 6:
+				gripperClaw.set(false);
+				myRobot.tankDrive(-.65, .65);
+				if (gyroD >= feedAngR2) {
+					rightEnc.reset();
+					step++;
+				}
+				break;
+			case 7:
+				myRobot.tankDrive(.75, .75);
+				if (encRD > feedDisR4) {
+					step++;
+				}
+				break;
+			case 8:
+				myRobot.tankDrive(0, 0);
+				break;
+			case 9: // Blue Alliance
+				////system.out.println("4 Pit Blue");
+				myRobot.tankDrive(.75, .75);
+				if(gyroD >= gyroAdjAng && rightEnc.getDistance() <= feedDisB1){
+					//system.out.println("adjust right");
+					myRobot.tankDrive(.85, .8);
+				}
+				if(gyroD <= -gyroAdjAng && rightEnc.getDistance() <= feedDisB1){
+					//system.out.println("adjust left");
+					myRobot.tankDrive(.8, .85);
+				}
+				if(gyroD <= gyroAdjAng && gyroD >= -gyroAdjAng && rightEnc.getDistance() <= feedDisB1){
+					myRobot.tankDrive(.8, .8);
+				}
+				if (rightEnc.getDistance() > feedDisB1) { //040117 Jake Alex increased speed from 450
+					myRobot.tankDrive(0, 0);
+					gyro.reset();
+					step++;
+				}
+				break;
+			case 10:
+				myRobot.tankDrive(-.65, .65);
+				if (gyroD >= feedAngB1) {
+					myRobot.tankDrive(0, 0);
+					gyro.reset();
+					rightEnc.reset();
+					step++;
+				}
+				break;
+			case 11:
+				myRobot.tankDrive(.65, .65);
+				if(gyroD >= gyroAdjAng && rightEnc.getDistance() <= feedDisB2){
+					//system.out.println("adjust right");
+					myRobot.tankDrive(.85, .8);
+				}
+				if(gyroD <= -gyroAdjAng && rightEnc.getDistance() <= feedDisB2){
+					//system.out.println("adjust left");
+					myRobot.tankDrive(.8, .85);
+				}
+				if(gyroD <= gyroAdjAng && gyroD >= -gyroAdjAng && rightEnc.getDistance() <= feedDisB2){
+					myRobot.tankDrive(.8, .8);
+				}
+				if (encRD > feedDisB2) {
+					rightEnc.reset();
+					step++;
+				}
+				break;
+			case 12:
+				gripperClaw.set(true);
+				secondTime = false;
+				myRobot.tankDrive(-.65, -.65);
+				if (encRD < feedDisB3) {
+					rightEnc.reset();
+					gyro.reset();
+					step++;
+				}
+				break;
+			case 13:
+				gripperClaw.set(false);
+				myRobot.tankDrive(.65, -.65);
+				if (gyroD <= feedAngB2) {
+					rightEnc.reset();
+					step++;
+				}
+				break;
+			case 14:
+				myRobot.tankDrive(.75, .75);
+				if (encRD > feedDisB4) {
+					step++;
+				}
+				break;
+			case 15:
+				myRobot.tankDrive(0, 0);
+				break;
+			}
+		} else if(chickenHead5.get() == false){ //just else on 3-prong, 5 on normal
+			if (dropGear.get() == false && firstTime == true) {
+				step = 2;
+			}
+			switch (step) { // Center gear drop & shoot - Center on chickenHead
+			case 1: // Case 1: robot drives to lift
+					myRobot.tankDrive(.8, .8);
+					if(gyroD >= gyroAdjAng && rightEnc.getDistance() <= centDisRB1){
+						//system.out.println("adjust right");
+						myRobot.tankDrive(.85, .8);
+					}
+					if(gyroD <= -gyroAdjAng && rightEnc.getDistance() <= centDisRB1){
+						//system.out.println("adjust left");
+						myRobot.tankDrive(.8, .85);
+					}
+					if(gyroD <= gyroAdjAng && gyroD >= -gyroAdjAng && rightEnc.getDistance() <= centDisRB1){
+						myRobot.tankDrive(.8, .8);
+					}
+				if (rightEnc.getDistance() > centDisRB1){ // && dropGear.get() == true){
+					myRobot.tankDrive(0, 0);
+					rightEnc.reset();
+					step++;
+				}
+				break;
+			case 2: // Case 2: robot drops gear
+				//if(dropGear.get() == false){
+				myRobot.tankDrive(0, 0);
+				gripperClaw.set(true);
+				firstTime = false;
+				rightEnc.reset();
+				step++;
+				break;
+			case 3: // Case 3: Robot drives off lift
+				firstTime = false;
+				myRobot.tankDrive(-.65, -.65);
+				if (rightEnc.getDistance() < centDisRB2) {
+					myRobot.tankDrive(0, 0);
+					gripperClaw.set(false);
+					rightEnc.reset();
+					gyro.reset();
+					////system.out.println(color);
+					if (color == DriverStation.Alliance.Red) {
+						step++;
+					} else if (color == DriverStation.Alliance.Blue) {
+						step = 9;
+					}
+				}
+				break;
+			case 4: // Case 4: Red Alliance: robot turns to boiler
+				myRobot.tankDrive(.6, -.6);
+				m7.set(-1);
+				if (gyroD <= centAngR1) {
+					myRobot.tankDrive(0, 0);
+					rightEnc.reset();
+					step++;
+				}
+				break;
+			case 5: // Case 5: Stops the robot and resets gyroscope
+				myRobot.tankDrive(0, 0);
+				gyro.reset();
+				step++;
+				break;
+			case 6: // Case 6: robot drives forward to boiler & charges shooter motors
+				myRobot.tankDrive(.8, .8);
+				if(gyroD >= gyroAdjAng && rightEnc.getDistance() <= centDisR3){
+					////system.out.println("adjust right");
+					myRobot.tankDrive(.85, .8);
+				}
+				if(gyroD <= -gyroAdjAng && rightEnc.getDistance() <= centDisR3){
+					//system.out.println("adjust left");
+					myRobot.tankDrive(.8, .85);
+				}
+				if(gyroD <= gyroAdjAng && gyroD >= -gyroAdjAng && rightEnc.getDistance() <= centDisR3){
+					myRobot.tankDrive(.8, .8);
+				}
+				
+				if (rightEnc.getDistance() > centDisR3) { //040117 Jake Alex increased speed from 450
+					myRobot.tankDrive(0, 0);
+					step++;
+				}
+				break;
+			case 7: // Case 7: Turns on agitator motors until hopper motor reads past 6060
+				if (PDP.getCurrent(15) <= 3) {
+					m6.set(-.55);
+				}
+				if (PDP.getCurrent(15) >= 3 && hJam == false) {
+					if (hInit > hInitMax) {
+						hRun = false;
+						hJam = true;
+						isTime = Timer.getFPGATimestamp();
+					} else {
+						hInit = hInit + 1;
+					}
+				}
+				if (hJam == true) {
+					m6.set(.7);
+					if (hJam == true && chTime > ihTime + .05) {
+						hJam = false;
+						hRun = true;
+						hInit = 0;
+					}
+				}
+				if (hopper.getDistance() >= 3000) {
+					step++;
+				}
+				break;
+			case 8: // Case 8: Turns off shooting and agitator motors
+				m7.set(0);
+				m6.set(0);
+				hopper.reset();
+				gyro.reset();
+				break;
+			case 9: // Case 9: Blue Alliance robot drives off lift
+				//system.out.println("5 Center Blue");
+				myRobot.tankDrive(-.6, .6);
+				m7.set(-1);
+				if (gyroD >= centAngB1) {//032317 2:07 Jake Alex changed angle to 110 degrees from 90 degrees
+					myRobot.tankDrive(0, 0);
+					rightEnc.reset();
+					step++;
+				}
+				break;
+			case 10: //Case 10: Blue Alliance: Turn towards boiler
+				myRobot.tankDrive(0, 0);
+				gyro.reset();
+				step++;
+				break;
+			case 11: //Case 11: Drive towards boiler, prepare to shoot
+				myRobot.tankDrive(.6, .6);
+				if(gyroD >= gyroAdjAng && rightEnc.getDistance() <= centDisB3){
+					//system.out.println("adjust right");
+					myRobot.tankDrive(.85, .8);
+				}
+				if(gyroD <= -gyroAdjAng && rightEnc.getDistance() <= centDisB3){
+					//system.out.println("adjust left");
+					myRobot.tankDrive(.8, .85);
+				}
+				if(gyroD <= gyroAdjAng && gyroD >= -gyroAdjAng && rightEnc.getDistance() <= centDisB3){
+					myRobot.tankDrive(.8, .8);
+				}
+				
+				if (rightEnc.getDistance() > centDisB3) { //040117 Jake Alex increased speed from 450
+					myRobot.tankDrive(0, 0);
+					step++;
+				}
+				break;
+			case 12: //Case 12: Spin agitator and shoot
+				if (PDP.getCurrent(15) <= 3) {
+					hJam = false;
+					m6.set(-.55);
+				}
+				if (PDP.getCurrent(15) >= 3 && hJam == false) {
+					if (hInit > hInitMax) {
+						hJam = true;
+						isTime = Timer.getFPGATimestamp();
+					} else {
+						hInit = hInit + 1;
+					}
+				}
+				if (hJam == true) {
+					m6.set(.7);
+					if (hJam == true && chTime > ihTime + .05) {
+						hJam = false;
+						hInit = 0;
+					}
+				}
+				if (hopper.getDistance() >= 3000) {
+					step++;
+				}
+				break;
+			case 13: //Case 13: Turns off shooter and agitator motors
+				m7.set(0);
+				m6.set(0);
+				hopper.reset();
+				gyro.reset();
+				break;
+			}
+		}
+	}
+
+	@Override
+	public void teleopInit() {
+		// Hopper Distances
+		dJam = 250; // sets value of dJam
+		hRev = 1212;
+
+		// Resets
+		hopper.reset();
+		rightEnc.reset();
+		leftEnc.reset();
+		gyro.reset();
+		SmartDashboard.putBoolean("shootPos", false);
+		// SmartDashboard.putBoolean("Climbed", false);
+		SmartDashboard.putBoolean("Drop Gear", false);
+		SmartDashboard.putNumber("HopperD", 0);
+		gripperClaw.set(false);
+		gearShift.set(true);
+
+		// Motors
+		m1.set(0);
+		m2.set(0);
+		m3.set(0);
+		m4.set(0);
+		m5.set(0);
+		m6.set(0);
+		m7.set(0);
+		m8.set(0);
+
+		// Hopper/Shooter Values
+		hRun = false; // Run The Hopper
+		hStop = false; // Stop The Hopper
+		hJam = false; // Unjam The Hopper
+		gShoot = false; // Go Shooting
+		sShoot = false; // Stop Shooting
+		hInit = 0; // Default Jam Count
+		hInitMax = 4; // Max Jam Count
+		shootPos = false; // Set Up Shooting Position
+		killShoot = false; // Kills Shooting Functions
+		killDrive = false; // Kills Driving Functions
+		
+		// Motor Controls Test
+		cMotor = 0; // Default Motor Count
+		cMotorMax = 8; // Max Motor Count
+	}
+
+	@Override
+	public void teleopPeriodic() {
+		// Hopper & Shooter Functions
+		SmartDashboard.putNumber("m6Cur", PDP.getCurrent(15));
+		SmartDashboard.putNumber("HopperD", hopper.getDistance());
+		SmartDashboard.putNumber("LeftD", leftEnc.getDistance() * -1);
+		SmartDashboard.putNumber("RightD", rightEnc.getDistance());
+		SmartDashboard.putNumber("Gyro", gyro.getAngle());
+		csTime = Timer.getFPGATimestamp();
+		chTime = Timer.getFPGATimestamp();
+
+		if (maniStick.getRawButton(11)) {
+			hRun = true;
+			hStop = false;
+			gShoot = true;
+			sShoot = false;
+			isTime = Timer.getFPGATimestamp();
+		}
+		if (maniStick.getRawButton(12)) {
+			hRun = false;
+			hStop = true;
+			isTime = Timer.getFPGATimestamp();
+		}
+		if (gShoot == true) {
+			m7.set(-1);
+		}
+		if (sShoot == true) {
+			m7.set(0);
+		}
+		if (hRun == true && csTime > isTime + 1.5) {
+			m6.set(-.4);
+		}
+
+		if (hopper.getDistance() <= hRev && hStop == true) {
+			m6.set(-.4);
+		}
+		if (hopper.getDistance() >= hRev && hStop == true) {
+			m6.set(0);
+			hStop = false;
+			hopper.reset();
+			gShoot = false;
+			sShoot = true;
+		}
+		if (PDP.getCurrent(15) >= 3 && hJam == false) {
+			if (hInit > hInitMax) {
+				hRun = false;
+				hJam = true;
+				isTime = Timer.getFPGATimestamp();
+			} else {
+				hInit = hInit + 1;
+			}
+		}
+		if (hJam == true) {
+			m6.set(.7);
+			if (hJam == true && chTime > ihTime + .05) {
+				hJam = false;
+				hRun = true;
+				hInit = 0;
+			}
+		}
+		if (hopper.getDistance() >= hRev && hStop == false) {
+			hopper.reset();
+		}
+
+		// Arm Functions
+		if (maniStick.getRawButton(1)) {
+			gripperClaw.set(true); // Open
+		}
+		if (gripperClaw.get() == true) {
+			SmartDashboard.putString("Claw", "Open");
+		}
+		if (maniStick.getRawButton(2)) {
+			gripperClaw.set(false); // Close
+		}
+		if (gripperClaw.get() == false) {
+			SmartDashboard.putString("Claw", "Close");
+		}
+		if (maniStick.getRawButton(3)) {
+			gripperClaw.set(false); // Close
+			gripperArm.set(false); // Up
+		}
+		if (gripperArm.get() == false) {
+			SmartDashboard.putString("Arm", "Up");
+		}
+		if (maniStick.getRawButton(4)) {
+			gripperClaw.set(false); // Close
+			gripperArm.set(true); // Down
+		}
+		if (gripperArm.get() == true) {
+			SmartDashboard.putString("Arm", "Down");
+		}
+		
+		// Climber
+		if (maniStick.getY() >= .25) {
+			m5.set(1);
+			m8.set(1);
+		} else if (maniStick.getY() <= -.25) {
+			m5.set(-1);
+			m8.set(-1);
+		} else {
+			m5.set(0);
+			m8.set(0);
+		}
+
+		// Limit Switches
+		if (gripperDown.get() == false) {
+			if (autoGear.get() == false) {
+				gripperClaw.set(false);
+				gripperArm.set(false);
+				System.out.println("Active");
+			}
+		}
+		if (dropGear.get() == false && gripperDown.get() == true) {
+			gripperClaw.set(true);
+			SmartDashboard.putBoolean("Drop Gear", true);
+		} else {
+			SmartDashboard.putBoolean("Drop Gear", false);
+		}
+
+		if (topRope.get() == false) {
+			m5.set(0);
+			// SmartDashboard.putBoolean("Climbed", true);
+		} else {
+			// SmartDashboard.putBoolean("Climbed", false);
+		}
+		
+	// Gear Shifter/Drive
+		if (leftStick.getRawButton(1) == true) { // Change Speed To 50%
+			gearShift.set(false); 
+			SmartDashboard.putBoolean("Speed", false);
+		}
+		if (rightStick.getRawButton(1) == true) { // Change Speed To 100%
+			gearShift.set(true);
+			SmartDashboard.putBoolean("Speed", true);
+		}
+		rValue = rightStick.getY();
+		lValue = leftStick.getY();
+		myRobot.tankDrive(-lValue, -rValue); 
+
+		// Shooter Position
+		if (maniStick.getRawButton(7)) {
+			shootPos = true;
+			rightEnc.reset();
+		}
+		if (shootPos == true) {
+			myRobot.tankDrive(-.8, -.8); // (-0.7, -0.7) in test bot, (-0.75, -0.8) in competition bot. 02.21.2017
+			SmartDashboard.putBoolean("shootPos", true);
+		}
+		if (rightEnc.getDistance() <= -125 && shootPos == true) { // 65 in test bot, 125 in competition bot. 02.21.2017
+			myRobot.tankDrive(0, 0);
+			shootPos = false;
+			SmartDashboard.putBoolean("shootPos", false);
+		}
+
+		// Kill Shooter
+		if (maniStick.getRawButton(9)) {
+			killShoot = true;
+		}
+		if (killShoot == true) {
+			hRun = false;
+			hStop = false;
+			gShoot = false;
+			sShoot = false;
+			hJam = false;
+			m6.set(0);
+			m7.set(0);
+			killShoot = false;
+		}
+
+		// Kill Drive
+		if (maniStick.getRawButton(10)) {
+			killDrive = true;
+		}
+		if (killDrive == true) {
+			shootPos = false;
+			m1.set(0);
+			m2.set(0);
+			m3.set(0);
+			m4.set(0);
+			killDrive = false;
+		}
+
+		// LEDS
+		if (maniStick.getRawButton(5)) {
+			lights.set(1);
+		} else {
+			if (maniStick.getRawButton(6)) {
+				lights.set(-1);
+			} else {
+				lights.set(0);
+			}
+		}
+
+		// Camera POV
+		if (leftStick.getRawButton(7)){
+			camPOV.set(true);
+		}
+		if (rightStick.getRawButton(7)){
+			camPOV.set(false);
+		}	
+	}
+
+	@Override
+	public void testInit() {
+	rightEnc.reset();
+	gyro.reset();
+	}
+
+	@Override
+	public void testPeriodic() {
+		double gyroD = gyro.getAngle();
+		//system.out.println(gyroD);
+		if(gyroD >= gyroAdjAng && rightEnc.getDistance() <= 762){
+			//system.out.println("adjust right");
+			myRobot.tankDrive(.85, .8);
+		}
+		if(gyroD <= -gyroAdjAng && rightEnc.getDistance() <= 762){
+			//system.out.println("adjust left");
+			myRobot.tankDrive(.8, .85);
+		}
+		if(gyroD <= gyroAdjAng && gyroD >= -gyroAdjAng && rightEnc.getDistance() <= 762){
+			myRobot.tankDrive(.8, .8);
+		}
+		
+		if (rightEnc.getDistance() > 762) { //040117 Jake Alex increased speed from 450
+			myRobot.tankDrive(0, 0);
+			step++;
+		}
+	}
+}
