@@ -1,0 +1,207 @@
+package org.usfirst.frc.team3489.robot;
+
+/*
+Alex 01/18/2018 - Palm Base Code
+
+Left Stick Buttons
+ * 1 - Camera POV Up
+ * 7 - Shift Gears 50%
+ * Y - Left Drive
+
+Right Stick Buttons
+ * 1 - Camera POV Down
+ * 7 - Shift Gears 100%
+ * Y - Right Drive
+
+Manipulator Stick Buttons
+ * 1 - Cube Intake		
+ * 2 - Cube Outtake		
+ * 3 - Open Gripper			
+ * 4 - Close Gripper			
+ * 5 - Kill Lift
+ * 6 - Kill Intake
+ * 7 - Floor Position
+ * 8 - Switch Position 
+ * 9 - Low Scale Position	// Remove Maybe ---> Lift Retractor
+ * 10 - High Scale Position	// Remove Maybe ---> Lower Retractor
+ * 11 - Climber Up
+ * 12 - Climber Down
+ * Y - Lifter
+*/
+
+import edu.wpi.first.wpilibj.AnalogGyro;
+import edu.wpi.first.wpilibj.AnalogInput;
+import edu.wpi.first.wpilibj.CameraServer;
+import edu.wpi.first.wpilibj.DigitalInput;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.Encoder;
+import edu.wpi.first.wpilibj.IterativeRobot;
+import edu.wpi.first.wpilibj.Joystick;
+import edu.wpi.first.wpilibj.Solenoid;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.drive.DifferentialDrive;
+import com.ctre.phoenix.motorcontrol.can.*;
+
+public class Robot extends IterativeRobot {
+	
+	Joystick leftStick = new Joystick(0); // Left Driver Joystick
+	Joystick rightStick = new Joystick(1); // Right Driver Joystick
+	Joystick maniStick = new Joystick(2); // Manipulator Joystick
+	WPI_TalonSRX m1 = new WPI_TalonSRX(1); // Front Left Motor
+	WPI_TalonSRX m2 = new WPI_TalonSRX(2); // Front Right Motor
+	WPI_TalonSRX m3 = new WPI_TalonSRX(3); // Back Left Motor (Slave)
+	WPI_TalonSRX m4 = new WPI_TalonSRX(4); // Back Right Motor (Slave)
+	WPI_TalonSRX m5 = new WPI_TalonSRX(5); // Climb Motor
+	WPI_TalonSRX m6 = new WPI_TalonSRX(6); // Intake Motor
+	WPI_TalonSRX m6 = new WPI_TalonSRX(7); // Lift Motor	//**//
+	DifferentialDrive driveTrain = new DifferentialDrive(m1, m2);	// Main Drive Train
+	Solenoid s1 = new Solenoid(20, 1); // Lift  //**//
+	Solenoid s2 = new Solenoid(20, 2); // Grip
+	Solenoid s3 = new Solenoid(20, 3); // Gear Shift
+	Solenoid s4 = new Solenoid(20, 4); // CameraPOV
+	DigitalInput gripperDown = new DigitalInput(1); // Hall Sensor
+	DigitalInput autoCube = new DigitalInput(2); // Auto Grip and Retract With Cube
+	DigitalInput topRung = new DigitalInput(3); // Fully Climbed Rung
+	Encoder leftEnc = new Encoder(4, 5, false, Encoder.EncodingType.k2X); // Left Drive Encoder
+	Encoder rightEnc = new Encoder(6, 7, false, Encoder.EncodingType.k2X); // Right Drive Encoder
+	Encoder liftEnc = new Encoder(8, 9, false, Encoder.EncodingType.k2X); // Lift Encoder
+	AnalogGyro gyro = new AnalogGyro(0); // Gyroscope
+	DriverStation.Alliance color; // Alliance Color
+	int step = 1; // Initial Step Value
+
+		// Booleans
+			boolean intakeOn; // Run Intake
+			boolean intakeOff; // Stop Intake
+			boolean killLift; // Kills Lifter Commands
+			boolean killIntake; // Kills Intake Commands
+				
+
+	@Override
+    public void robotInit() {
+		
+		// Safety
+			driveTrain.setSafetyEnabled(false);
+		
+		// Camera
+			try {
+				CameraServer.getInstance().startAutomaticCapture();
+				// system.out.println("Cam0");
+			} catch (Exception e) {
+				// system.out.println("Failed Vision");
+			}
+				
+		// Gyroscope
+			gyro.calibrate();
+			gyro.initGyro();
+			gyro.reset();
+		
+		// Slaves
+			m3.follow(m1); // Back Left Motor (Slave) Follows Front Left Motor
+			m4.follow(m2); // Back Right Motor (Slave) Follows Front Right Motor
+    	
+		// SmartDashboard
+    
+    }
+   
+	@Override
+    public void teleopInit() {
+		// Booleans
+		intakeOn = false;
+		intakeOff = true;
+		killLift = false;
+    killIntake = false;
+    }
+    
+	@Override
+    public void teleopPeriodic() {
+		
+		// Motor Controllers
+			// Differential Drive Controls
+	    	double lValue = leftStick.getY() * -1; // Left Drive Speed
+	    	double rValue = rightStick.getY() * -1; // Right Drive Speed
+	    	driveTrain.tankDrive(lValue, rValue); // Tank Drive Control
+	    	
+	    	// Intake
+	    	if (leftStick.getRawButton(5) && intakeOff == true) {
+	    		intakeOn = true;
+	    		intakeOff = false;
+	    	}
+	    	if(intakeOn == true) {
+	    		m6.set(.4);
+	    	}
+	    	if (rightStick.getRawButton(5) && intakeOn == true) {
+	    		intakeOff = true;
+	    		intakeOn = false;
+	    	}
+	    	if (intakeOff == true) {
+	    		m6.set(0);
+	    	}
+    	
+    	// Pneumatics
+	    	// Lifter
+	    	if (leftStick.getRawButton(2)) {
+	    		s1.set(true); // Moves Lifter Down
+	    	} else if (rightStick.getRawButton(2)) {
+	    		s1.set(false); // Moves Lifter Up
+	    	}
+	    	
+	    	// Gripper
+	    	if (leftStick.getRawButton(3)) {
+	    		s2.set(true); // Closes Gripper
+	    	}else if (rightStick.getRawButton(3)) {
+	    		s2.set(false); // Opens Gripper
+	    	}
+	    	
+	    	// Gear Shifter
+	    	if (leftStick.getRawButton(1)) {
+	    		s3.set(true); // Change Speed To 100%
+	    	}else if (rightStick.getRawButton(1)) {
+	    		s3.set(false); // Change Speed To 50%
+	    	}
+	    	
+	    	// Camrea POV
+	    	if (leftStick.getRawButton(1)) {
+	    		s4.set(true); // Move Camera POV Down
+	    	}else if (rightStick.getRawButton(1)) {
+	    		s4.set(false); // Move Camera POV Up
+	    	}
+	    	
+	    // Encoder Presets
+	    	
+	    // Limit Switches
+	    	// Cube Pickup
+			if (autoCube.get() == false) {
+				s1.set(false); // Move Lifter Up
+				s2.set(true); // Close Gripper
+				intakeOn = true; // Disables Intake
+	    			intakeOff = false; // Disables Intake
+			}
+			
+			// Climbed
+			if (topRung.get() == false) {
+				m5.set(0);
+				// SmartDashboard.putBoolean("Climbed", true);
+			} else {
+				// SmartDashboard.putBoolean("Climbed", false);
+			}
+			
+		// Kill Commands
+			// Kill Lift
+			if (maniStick.getRawButton(5)) {
+				killLift = true;
+			}
+			if (killLift == true) {
+				m7.set(0);
+				killLift = false;
+			}
+			
+			// Kill Intake
+			if (maniStick.getRawButton(6)) {
+				killIntake = true;
+			}
+			if (killLift == true) {
+				m6.set(0);
+				killIntake = false;
+			}
+    }
+}
