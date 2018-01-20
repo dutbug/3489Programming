@@ -53,7 +53,7 @@ public class Robot extends IterativeRobot {
 	WPI_TalonSRX m4 = new WPI_TalonSRX(4); // Back Right Motor (Slave)
 	WPI_TalonSRX m5 = new WPI_TalonSRX(5); // Climb Motor
 	WPI_TalonSRX m6 = new WPI_TalonSRX(6); // Intake Motor
-	WPI_TalonSRX m6 = new WPI_TalonSRX(7); // Lift Motor	//**//
+	WPI_TalonSRX m7 = new WPI_TalonSRX(7); // Lift Motor	//**//
 	DifferentialDrive driveTrain = new DifferentialDrive(m1, m2);	// Main Drive Train
 	Solenoid s1 = new Solenoid(20, 1); // Lift  //**//
 	Solenoid s2 = new Solenoid(20, 2); // Grip
