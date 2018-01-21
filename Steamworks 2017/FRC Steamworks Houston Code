@@ -18,7 +18,7 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 /*
- * John/Alex 04/20/2017 - Base Code
+ * Alex 04/20/2017 - Base Code
  * This code will run the test and final chassis for Houston
  * The prototype chassis requires 2 motors to be inverted (m2 & m3) See Alex's comment.
  * 04/20/17 Added camera movement - changed auto numbers to match printed papers.
