@@ -1,0 +1,1077 @@
+package org.usfirst.frc.team3489.robot;
+
+/*
+Alex 01/20/2018 - Palm Base Code
+
+Left Stick Buttons
+ * 1 - Camera POV Up
+ * 7 - Shift Gears 50%
+ * Y - Left Drive
+
+Right Stick Buttons
+ * 1 - Camera POV Down
+ * 7 - Shift Gears 100%
+ * Y - Right Drive
+
+Manipulator Stick Buttons
+ * 1 - Cube Intake		
+ * 2 - Cube Outtake		
+ * 3 - Open Gripper			
+ * 4 - Close Gripper			
+ * 5 - Kill Lift
+ * 6 - Kill Intake
+ * 7 - Floor Position
+ * 8 - Switch Position 
+ * 9 - Low Scale Position	// Remove Maybe ---> Lift Retractor
+ * 10 - High Scale Position	// Remove Maybe ---> Lower Retractor
+ * 11 - Climber Up
+ * 12 - Climber Down
+ * Y - Lifter
+*/
+
+import edu.wpi.first.wpilibj.AnalogGyro;
+import edu.wpi.first.wpilibj.AnalogInput;
+import edu.wpi.first.wpilibj.CameraServer;
+import edu.wpi.first.wpilibj.DigitalInput;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.Encoder;
+import edu.wpi.first.wpilibj.IterativeRobot;
+import edu.wpi.first.wpilibj.Joystick;
+import edu.wpi.first.wpilibj.Solenoid;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.drive.DifferentialDrive;
+import com.ctre.phoenix.motorcontrol.can.*;
+
+public class Robot extends IterativeRobot {
+	
+	Joystick leftStick = new Joystick(0); // Left Driver Joystick
+	Joystick rightStick = new Joystick(1); // Right Driver Joystick
+	Joystick maniStick = new Joystick(2); // Manipulator Joystick
+	WPI_TalonSRX m1 = new WPI_TalonSRX(1); // Front Left Motor
+	WPI_TalonSRX m2 = new WPI_TalonSRX(2); // Front Right Motor
+	WPI_TalonSRX m3 = new WPI_TalonSRX(3); // Back Left Motor (Slave)
+	WPI_TalonSRX m4 = new WPI_TalonSRX(4); // Back Right Motor (Slave)
+	WPI_TalonSRX m5 = new WPI_TalonSRX(5); // Lift Motor	//**//
+	WPI_TalonSRX m6 = new WPI_TalonSRX(6); // Intake Motor
+	WPI_TalonSRX m7 = new WPI_TalonSRX(7); // Climb Motor
+	DifferentialDrive driveTrain = new DifferentialDrive(m1, m2);	// Main Drive Train
+	Solenoid s1 = new Solenoid(20, 1); // Lift  //**//
+	Solenoid s2 = new Solenoid(20, 2); // Grip
+	Solenoid s3 = new Solenoid(20, 3); // Gear Shift
+	Solenoid s4 = new Solenoid(20, 4); // CameraPOV
+	DigitalInput gripperDown = new DigitalInput(1); // Hall Sensor
+	DigitalInput autoCube = new DigitalInput(2); // Auto Grip and Retract With Cube
+	DigitalInput topRung = new DigitalInput(3); // Fully Climbed Rung
+	Encoder leftEnc = new Encoder(4, 5, false, Encoder.EncodingType.k2X); // Left Drive Encoder
+	Encoder rightEnc = new Encoder(6, 7, false, Encoder.EncodingType.k2X); // Right Drive Encoder
+	Encoder liftEnc = new Encoder(8, 9, false, Encoder.EncodingType.k2X); // Lift Encoder
+	AnalogGyro gyro = new AnalogGyro(0); // Gyroscope
+	DriverStation.Alliance color; // Alliance Color
+	int step = 1; // Initial Step Value
+	
+	// Booleans
+		boolean inTake; // Run Intake
+		boolean outTake; // Run Outtake
+		boolean killLift; // Kills Lifter Commands
+		boolean killIntake; // Kills Intake Commands
+		boolean killClimb; // Kills Climber Commands
+		boolean floorMov; // Move Lifter To Floor
+		boolean switchMov; // Move Lifter To Switch
+		boolean scaleLMov; // Move Lifter To Low Scale
+		boolean scaleHMov; // Move Lifter To High Scale
+	
+	// Autonomous
+		// Selection
+			DigitalInput ch1 = new DigitalInput(10); // Left Switch Score/Autoline
+			DigitalInput ch2 = new DigitalInput(11); // Middle Switch Score/Autoline
+			DigitalInput ch3 = new DigitalInput(12); // Right Switch Score/Autoline
+			DigitalInput ch4 = new DigitalInput(13); // Null
+			
+		// Lift Positions
+			double floorPos;
+			double switchPos;
+			double scaleLPos;
+			double scaleHPos;
+				
+		// Distances
+			 // Left Side Switch Scoring
+				double leftDis1;
+				double leftDis2;
+				double leftDis3;
+				double leftDis4;
+				double leftDis5;
+			 // Left Side Switch Driving
+				double leftDis6;
+				double leftDis7;
+			 // Middle Left Switch Scoring
+				double midlDis1;
+				double midlDis2;
+				double midlDis3;
+				double midlDis4;
+				double midlDis5;
+				double midlDis6;
+			 // Middle Right Switch Scoring
+				double midrDis1;
+				double midrDis2;
+				double midrDis3;
+				double midrDis4;
+				double midrDis5;
+				double midrDis6;
+			 // Right Side Switch Scoring
+				double rightDis1;
+				double rightDis2;
+				double rightDis3;
+				double rightDis4;
+				double rightDis5;
+			 // Right Side Switch Driving
+				double rightDis6;
+				double rightDis7;
+		
+		// Angles
+			 // Left Side Switch Scoring
+				double leftAng1;
+				double leftAng2;
+				double leftAng3;
+			 // Left Side Switch Driving
+				double leftAng4;
+			 // Middle Left Switch Scoring
+				double midlAng1;
+				double midlAng2;
+				double midlAng3;
+				double midlAng4;
+			 // Middle Right Switch Scoring
+				double midrAng1;
+				double midrAng2;
+				double midrAng3;
+				double midrAng4;
+		     // Right Side Switch Scoring
+				double rightAng1;
+				double rightAng2;
+				double rightAng3;
+			 // Right Side Switch Driving
+				double rightAng4;
+			 // Angle Offset
+				double angleOff;
+
+	@Override
+    public void robotInit() {
+		
+		// Safety
+			driveTrain.setSafetyEnabled(false);
+		
+		// Camera
+			try {
+				CameraServer.getInstance().startAutomaticCapture();
+				// system.out.println("Cam0");
+			} catch (Exception e) {
+				// system.out.println("Failed Vision");
+			}
+				
+		// Gyroscope
+			gyro.calibrate();
+			gyro.initGyro();
+			gyro.reset();
+		
+		// Slaves
+			m3.follow(m1); // Back Left Motor (Slave) Follows Front Left Motor
+			m4.follow(m2); // Back Right Motor (Slave) Follows Front Right Motor
+    	
+		// SmartDashboard
+    	
+    }
+    
+	@Override
+    public void autonomousInit() {
+		
+		color = DriverStation.getInstance().getAlliance();
+		
+		// Autonomous Distances (Encoder)	
+			 // Left Side Switch Scoring
+			 	leftDis1 = 0; //
+			 	leftDis2 = 0; //
+			 	leftDis3 = 0; //
+			 	leftDis4 = 0; //
+			 	leftDis5 = 0; //	
+			 // Left Side Switch Driving
+			 	leftDis6 = 0; //
+			 	leftDis7 = 0; //
+			 // Middle Left Switch Scoring
+			 	midlDis1 = 0; //
+			 	midlDis2 = 0; //
+			 	midlDis3 = 0; //
+			 	midlDis4 = 0; //
+			 	midlDis5 = 0; //
+			 	midlDis6 = 0; //
+			 // Middle Right Switch Scoring
+			 	midrDis1 = 0; //
+			 	midrDis2 = 0; //
+				midrDis3 = 0; //
+				midrDis4 = 0; //
+				midrDis5 = 0; //
+				midrDis6 = 0; //
+			 // Right Side Switch Scoring
+				rightDis1 = 0; //
+				rightDis2 = 0; //
+				rightDis3 = 0; //
+				rightDis4 = 0; //
+				rightDis5 = 0; //
+			 // Right Side Switch Driving
+			 	rightDis6 = 0; //
+			 	rightDis7 = 0; //
+			 
+		// Autonomous Turn Angles (Gyro)	
+			 // Left Side Switch Scoring
+				leftAng1 = 0; //
+				leftAng2 = 0; //
+				leftAng3 = 0; //
+			 // Left Side Switch Driving
+				leftAng4 = 0; //
+			 // Middle Left Switch Scoring
+				midlAng1 = 0; //
+				midlAng2 = 0; //
+				midlAng3 = 0; //
+				midlAng4 = 0; //
+			 // Middle Right Switch	Scoring
+				midrAng1 = 0; //
+				midrAng2 = 0; //
+				midrAng3 = 0; //
+				midrAng4 = 0; //
+			 // Right Side Switch Scoring
+				rightAng1 = 0; //
+				rightAng2 = 0; //
+				rightAng3 = 0; //
+			 // Right Side Switch Driving
+				rightAng4 = 0; //
+			 //Angle Offset
+				angleOff = .5; // Adjustment Angle For Driving With Gyroscope
+
+		// Resets
+			leftEnc.reset();
+			rightEnc.reset();
+			gyro.reset();
+			step = 1;
+    }
+    
+	@Override
+    public void autonomousPeriodic() {
+		
+			double encLD = leftEnc.getDistance() * -1; // Left Encoder Value
+			double encRD = rightEnc.getDistance() * 1; // Right Encoder Value
+			double gyroD = gyro.getAngle();	// Gyroscope Value
+		
+			String gameData;
+    	    gameData = DriverStation.getInstance().getGameSpecificMessage();
+  
+	if (ch1.get() == false) { // Left Switch Autonomous Selection
+		switch (step) {
+		case 1: // Decision Method
+			if (gameData.charAt(0) == 'L') {	// Run Scoring Method
+				s1.set(true);
+				s2.set(true);
+				step++;
+			} else if (gameData.charAt(0) == 'R'){ // Run Driving Method
+				s1.set(true);
+				s2.set(true);
+				step = 11;
+			}
+			rightEnc.reset();
+			gyro.reset();
+			break;
+		case 2:	// Forward ~ 165 in
+			driveTrain.tankDrive(.75, .75);
+			if (gyroD >= angleOff && rightEnc.getDistance() <= leftDis1){
+				driveTrain.tankDrive(.85, .8);
+			}
+			if (gyroD <= -angleOff && rightEnc.getDistance() <= leftDis1){
+				driveTrain.tankDrive(.8, .85);
+			}
+			if (gyroD <= angleOff && gyroD >= -angleOff && rightEnc.getDistance() <= leftDis1){
+				driveTrain.tankDrive(.8, .8);
+			}
+			if (encRD >= leftDis1) {
+				gyro.reset();
+				step++;
+			}
+			break;
+		case 3:	// Rotate 90°
+			driveTrain.tankDrive(-.65, .65);
+			if (gyroD >= leftAng1) {
+				gyro.reset();
+				rightEnc.reset();
+				step++;
+			}
+			break;
+		case 4:	// Forward ~ 10 in
+			driveTrain.tankDrive(.8, .8);
+			if (gyroD >= angleOff && rightEnc.getDistance() <= leftDis2){
+				driveTrain.tankDrive(.85, .8);
+			}
+			if (gyroD <= -angleOff && rightEnc.getDistance() <= leftDis2){
+				driveTrain.tankDrive(.8, .85);
+			}
+			if (gyroD <= angleOff && gyroD >= -angleOff && rightEnc.getDistance() <= leftDis2){
+				driveTrain.tankDrive(.8, .8);
+			}
+			if (encRD >= leftDis2) {
+				gyro.reset();
+				step++;
+			}
+			break;
+		case 5:	// Place Cube
+			driveTrain.tankDrive(0, 0);
+			rightEnc.reset();
+			s1.set(false);
+			step++;
+			break;
+		case 6:	// Reverse ~ 10 in
+			driveTrain.tankDrive(-.65, -.65);
+			if (gyroD >= angleOff && rightEnc.getDistance() >= leftDis3){
+				driveTrain.tankDrive(-.8, -.85);
+			}
+			if (gyroD <= -angleOff && rightEnc.getDistance() >= leftDis3){
+				driveTrain.tankDrive(-.85, -.8);
+			}
+			if (gyroD <= angleOff && gyroD >= -angleOff && rightEnc.getDistance() >= leftDis3){
+				driveTrain.tankDrive(-.8, -.8);
+			}
+			if (encRD <= leftDis3) {
+				s1.set(false);
+				gyro.reset();
+				step++;
+			}
+			break;
+		case 7:	// Rotate -90°
+			driveTrain.tankDrive(.75, -.75);
+			if (gyroD <= leftAng2) {
+				gyro.reset();
+				rightEnc.reset();
+				step++;
+			}
+			break;
+		case 8:	// Forward ~ 100 in
+			driveTrain.tankDrive(.75, .75);
+			if (gyroD >= angleOff && rightEnc.getDistance() <= leftDis4){
+				driveTrain.tankDrive(.85, .8);
+			}
+			if (gyroD <= -angleOff && rightEnc.getDistance() <= leftDis4){
+				driveTrain.tankDrive(.8, .85);
+			}
+			if (gyroD <= angleOff && gyroD >= -angleOff && rightEnc.getDistance() <= leftDis4){
+				driveTrain.tankDrive(.8, .8);
+			}
+			if (encRD >= leftDis4) {
+				step++;
+			}
+			break;
+		case 9:	// Rotate 90°
+			driveTrain.tankDrive(-.75, .75);
+			if (gyroD <= leftAng3) {
+				gyro.reset();
+				rightEnc.reset();
+				step++;
+			}
+			break;
+		case 10: // Forward ~ 100 in
+			driveTrain.tankDrive(.75, .75);
+			if (gyroD >= angleOff && rightEnc.getDistance() <= leftDis5){
+				driveTrain.tankDrive(.85, .8);
+			}
+			if (gyroD <= -angleOff && rightEnc.getDistance() <= leftDis5){
+				driveTrain.tankDrive(.8, .85);
+			}
+			if (gyroD <= angleOff && gyroD >= -angleOff && rightEnc.getDistance() <= leftDis5){
+				driveTrain.tankDrive(.8, .8);
+			}
+			if (encRD >= leftDis5) {
+				driveTrain.tankDrive(0, 0);
+			}
+			break;
+		case 11: // Forward ~ 250 in
+			driveTrain.tankDrive(.75, .75);
+			if (gyroD >= angleOff && rightEnc.getDistance() <= leftDis6){
+				driveTrain.tankDrive(.85, .8);
+			}
+			if (gyroD <= -angleOff && rightEnc.getDistance() <= leftDis6){
+				driveTrain.tankDrive(.8, .85);
+			}
+			if (gyroD <= angleOff && gyroD >= -angleOff && rightEnc.getDistance() <= leftDis6){
+				driveTrain.tankDrive(.8, .8);
+			}
+			if (encRD >= leftDis6) {
+				step++;
+			}
+			break;
+		case 12: // Rotate 90°
+			driveTrain.tankDrive(-.75, .75);
+			if (gyroD <= leftAng4) {
+				gyro.reset();
+				rightEnc.reset();
+				step++;
+			}
+			break;
+		case 13: // Forward ~ 100 in
+			driveTrain.tankDrive(.75, .75);
+			if (gyroD >= angleOff && rightEnc.getDistance() <= leftDis7){
+				driveTrain.tankDrive(.85, .8);
+			}
+			if (gyroD <= -angleOff && rightEnc.getDistance() <= leftDis7){
+				driveTrain.tankDrive(.8, .85);
+			}
+			if(gyroD <= angleOff && gyroD >= -angleOff && rightEnc.getDistance() <= leftDis7){
+				driveTrain.tankDrive(.8, .8);
+			}
+			if (encRD >= leftDis7) {
+				driveTrain.tankDrive(0, 0);
+			}
+			break;
+		}
+	} else if (ch2.get() == false) { // Middle Switch Autonomous Selection
+		switch (step) {
+		case 1: // Decision Method
+			if (gameData.charAt(0) == 'L') {	// Run Scoring Method
+				s1.set(true);
+				s2.set(true);
+				step++;
+			} else if (gameData.charAt(0) == 'R'){ // Run Driving Method 
+				s1.set(true);
+				s2.set(true);
+				step = 13;
+			}
+			rightEnc.reset();
+			gyro.reset();
+			break;
+		case 2:	// Forward ~ 90 in
+			driveTrain.tankDrive(.75, .75);
+			if (gyroD >= angleOff && rightEnc.getDistance() <= midlDis1){
+				driveTrain.tankDrive(.85, .8);
+			}
+			if (gyroD <= -angleOff && rightEnc.getDistance() <= midlDis1){
+				driveTrain.tankDrive(.8, .85);
+			}
+			if (gyroD <= angleOff && gyroD >= -angleOff && rightEnc.getDistance() <= midlDis1){
+				driveTrain.tankDrive(.8, .8);
+			}
+			if (encRD >= midlDis1) {
+				gyro.reset();
+				step++;
+			}
+			break;
+		case 3:	// Rotate -90°
+			driveTrain.tankDrive(.65, -.65);
+			if (gyroD <= midlAng1) {
+				gyro.reset();
+				rightEnc.reset();
+				step++;
+			}
+			break;
+		case 4:	// Forward ~ 130 in
+			driveTrain.tankDrive(.8, .8);
+			if (gyroD >= angleOff && rightEnc.getDistance() <= midlDis2){
+				driveTrain.tankDrive(.85, .8);
+			}
+			if (gyroD <= -angleOff && rightEnc.getDistance() <= midlDis2){
+				driveTrain.tankDrive(.8, .85);
+			}
+			if (gyroD <= angleOff && gyroD >= -angleOff && rightEnc.getDistance() <= midlDis2){
+				driveTrain.tankDrive(.8, .8);
+			}
+			if (encRD >= midlDis2) {
+				gyro.reset();
+				step++;
+			}
+			break;
+		case 5:	// Rotate 90°
+			driveTrain.tankDrive(.65, -.65);
+			if (gyroD <= midlAng2) {
+				gyro.reset();
+				rightEnc.reset();
+				step++;
+			}
+			break;
+		case 6:	// Forward ~ 75 in
+			driveTrain.tankDrive(.65, .65);
+			if (gyroD >= angleOff && rightEnc.getDistance() >= midlDis3){
+				driveTrain.tankDrive(-.8, -.85);
+			}
+			if (gyroD <= -angleOff && rightEnc.getDistance() >= midlDis3){
+				driveTrain.tankDrive(-.85, -.8);
+			}
+			if (gyroD <= angleOff && gyroD >= -angleOff && rightEnc.getDistance() >= midlDis3){
+				driveTrain.tankDrive(-.8, -.8);
+			}
+			if (encRD >= midlDis3) {
+				s1.set(false);
+				gyro.reset();
+				step++;
+			}
+			break;
+		case 7:	// Rotate 90°
+			driveTrain.tankDrive(-.75, .75);
+			if (gyroD >= midlAng3) {
+				gyro.reset();
+				rightEnc.reset();
+				step++;
+			}
+			break;
+		case 8:	// Forward ~ 10 in
+			driveTrain.tankDrive(.75, .75);
+			if (gyroD >= angleOff && rightEnc.getDistance() <= midlDis4){
+				driveTrain.tankDrive(.85, .8);
+			}
+			if (gyroD <= -angleOff && rightEnc.getDistance() <= midlDis4){
+				driveTrain.tankDrive(.8, .85);
+			}
+			if (gyroD <= angleOff && gyroD >= -angleOff && rightEnc.getDistance() <= midlDis4){
+				driveTrain.tankDrive(.8, .8);
+			}
+			if (encRD >= midlDis4) {
+				step++;
+			}
+			break;
+		case 9:	// Place Cube
+			driveTrain.tankDrive(0, 0);
+			rightEnc.reset();
+			s1.set(false);
+			step++;
+			break;
+		case 10: // Reverse ~ 10 in
+			driveTrain.tankDrive(-.75, -.75);
+			if (gyroD >= angleOff && rightEnc.getDistance() <= midlDis5){
+				driveTrain.tankDrive(.85, .8);
+			}
+			if (gyroD <= -angleOff && rightEnc.getDistance() <= midlDis5){
+				driveTrain.tankDrive(.8, .85);
+			}
+			if (gyroD <= angleOff && gyroD >= -angleOff && rightEnc.getDistance() <= midlDis5){
+				driveTrain.tankDrive(.8, .8);
+			}
+			if (encRD <= midlDis5) {
+				driveTrain.tankDrive(0, 0);
+			}
+			break;
+		case 11: // Rotate -90°
+			driveTrain.tankDrive(.65, -.65);
+			if (gyroD <= midlAng4) {
+				gyro.reset();
+				rightEnc.reset();
+				step++;
+			}
+			break;
+		case 12: // Forward ~ 100 in
+			driveTrain.tankDrive(.75, .75);
+			if (gyroD >= angleOff && rightEnc.getDistance() <= midlDis6){
+				driveTrain.tankDrive(.85, .8);
+			}
+			if (gyroD <= -angleOff && rightEnc.getDistance() <= midlDis6){
+				driveTrain.tankDrive(.8, .85);
+			}
+			if (gyroD <= angleOff && gyroD >= -angleOff && rightEnc.getDistance() <= midlDis6){
+				driveTrain.tankDrive(.8, .8);
+			}
+			if (encRD >= midlDis6) {
+				driveTrain.tankDrive(0, 0);
+			}
+			break;
+		case 13: // Forward ~ 90 in
+			driveTrain.tankDrive(.75, .75);
+			if (gyroD >= angleOff && rightEnc.getDistance() <= midrDis1){
+				driveTrain.tankDrive(.85, .8);
+			}
+			if (gyroD <= -angleOff && rightEnc.getDistance() <= midrDis1){
+				driveTrain.tankDrive(.8, .85);
+			}
+			if (gyroD <= angleOff && gyroD >= -angleOff && rightEnc.getDistance() <= midrDis1){
+				driveTrain.tankDrive(.8, .8);
+			}
+			if (encRD >= midrDis1) {
+				gyro.reset();
+				step++;
+			}
+			break;
+		case 14: // Rotate 90°
+			driveTrain.tankDrive(-.65, 65);
+			if (gyroD >= midrAng1) {
+				gyro.reset();
+				rightEnc.reset();
+				step++;
+			}
+			break;
+		case 15: // Forward ~ 130 in
+			driveTrain.tankDrive(.8, .8);
+			if (gyroD >= angleOff && rightEnc.getDistance() <= midrDis2){
+				driveTrain.tankDrive(.85, .8);
+			}
+			if (gyroD <= -angleOff && rightEnc.getDistance() <= midrDis2){
+				driveTrain.tankDrive(.8, .85);
+			}
+			if (gyroD <= angleOff && gyroD >= -angleOff && rightEnc.getDistance() <= midrDis2){
+				driveTrain.tankDrive(.8, .8);
+			}
+			if (encRD >= midrDis2) {
+				gyro.reset();
+				step++;
+			}
+			break;
+		case 16: // Rotate -90°
+			driveTrain.tankDrive(-.65, .65);
+			if (gyroD >= midrAng2) {
+				gyro.reset();
+				rightEnc.reset();
+				step++;
+			}
+			break;
+		case 17: // Forward ~ 75 in
+			driveTrain.tankDrive(.65, .65);
+			if (gyroD >= angleOff && rightEnc.getDistance() >= midrDis3){
+				driveTrain.tankDrive(-.8, -.85);
+			}
+			if (gyroD <= -angleOff && rightEnc.getDistance() >= midrDis3){
+				driveTrain.tankDrive(-.85, -.8);
+			}
+			if (gyroD <= angleOff && gyroD >= -angleOff && rightEnc.getDistance() >= midrDis3){
+				driveTrain.tankDrive(-.8, -.8);
+			}
+			if (encRD >= midrDis3) {
+				s1.set(false);
+				gyro.reset();
+				step++;
+			}
+			break;
+		case 18: // Rotate -90°
+			driveTrain.tankDrive(-.75, .75);
+			if (gyroD >= midrAng3) {
+				gyro.reset();
+				rightEnc.reset();
+				step++;
+			}
+			break;
+		case 19: // Forward ~ 10 in
+			driveTrain.tankDrive(.75, .75);
+			if (gyroD >= angleOff && rightEnc.getDistance() <= midrDis4){
+				driveTrain.tankDrive(.85, .8);
+			}
+			if (gyroD <= -angleOff && rightEnc.getDistance() <= midrDis4){
+				driveTrain.tankDrive(.8, .85);
+			}
+			if (gyroD <= angleOff && gyroD >= -angleOff && rightEnc.getDistance() <= midrDis4){
+				driveTrain.tankDrive(.8, .8);
+			}
+			if (encRD >= midrDis4) {
+				step++;
+			}
+			break;
+		case 20: // Place Cube
+			driveTrain.tankDrive(0, 0);
+			rightEnc.reset();
+			s1.set(false);
+			step++;
+			break;
+		case 21: // Reverse ~ 10 in
+			driveTrain.tankDrive(-.75, -.75);
+			if (gyroD >= angleOff && rightEnc.getDistance() <= midrDis5){
+				driveTrain.tankDrive(.85, .8);
+			}
+			if (gyroD <= -angleOff && rightEnc.getDistance() <= midrDis5){
+				driveTrain.tankDrive(.8, .85);
+			}
+			if (gyroD <= angleOff && gyroD >= -angleOff && rightEnc.getDistance() <= midrDis5){
+				driveTrain.tankDrive(.8, .8);
+			}
+			if (encRD <= midrDis5) {
+				driveTrain.tankDrive(0, 0);
+			}
+			break;
+		case 22: // Rotate 90°
+			driveTrain.tankDrive(.65, -.65);
+			if (gyroD <= midrAng4) {
+				gyro.reset();
+				rightEnc.reset();
+				step++;
+			}
+			break;
+		case 23: // Forward ~ 100 in
+			driveTrain.tankDrive(.75, .75);
+			if (gyroD >= angleOff && rightEnc.getDistance() <= midrDis6){
+				driveTrain.tankDrive(.85, .8);
+			}
+			if (gyroD <= -angleOff && rightEnc.getDistance() <= midrDis6){
+				driveTrain.tankDrive(.8, .85);
+			}
+			if (gyroD <= angleOff && gyroD >= -angleOff && rightEnc.getDistance() <= midrDis6){
+				driveTrain.tankDrive(.8, .8);
+			}
+			if (encRD >= midrDis6) {
+				driveTrain.tankDrive(0, 0);
+			}
+			break;
+		}
+	} else if (ch3.get() == false) { // Right Switch Autonomous Selection
+		switch (step) {
+		case 1: // Decision Method
+			if (gameData.charAt(0) == 'R') {	// Run Scoring Method
+				s1.set(true);
+				s2.set(true);
+				step++;
+			} else if (gameData.charAt(0) == 'L'){ // Run Driving Method 
+				s1.set(true);
+				s2.set(true);
+				step = 11;
+			}
+			rightEnc.reset();
+			gyro.reset();
+			break;
+		case 2:	// Forward ~ 165 in
+			driveTrain.tankDrive(.75, .75);
+			if (gyroD >= angleOff && rightEnc.getDistance() <= rightDis1){
+				driveTrain.tankDrive(.85, .8);
+			}
+			if (gyroD <= -angleOff && rightEnc.getDistance() <= rightDis1){
+				driveTrain.tankDrive(.8, .85);
+			}
+			if (gyroD <= angleOff && gyroD >= -angleOff && rightEnc.getDistance() <= rightDis1){
+				driveTrain.tankDrive(.8, .8);
+			}
+			if (encRD >= rightDis1) {
+				gyro.reset();
+				step++;
+			}
+			break;
+		case 3:	// Rotate -90°
+			driveTrain.tankDrive(.65, -.65);
+			if (gyroD <= rightAng1) {
+				gyro.reset();
+				rightEnc.reset();
+				step++;
+			}
+			break;
+		case 4:	// Forward ~ 10 in
+			driveTrain.tankDrive(.8, .8);
+			if (gyroD >= angleOff && rightEnc.getDistance() <= rightDis2){
+				driveTrain.tankDrive(.85, .8);
+			}
+			if (gyroD <= -angleOff && rightEnc.getDistance() <= rightDis2){
+				driveTrain.tankDrive(.8, .85);
+			}
+			if (gyroD <= angleOff && gyroD >= -angleOff && rightEnc.getDistance() <= rightDis2){
+				driveTrain.tankDrive(.8, .8);
+			}
+			if (encRD >= rightDis2) {
+				gyro.reset();
+				step++;
+			}
+			break;
+		case 5:	// Place Cube
+			driveTrain.tankDrive(0, 0);
+			rightEnc.reset();
+			s1.set(false);
+			step++;
+			break;
+		case 6:	// Reverse ~ 10 in
+			driveTrain.tankDrive(-.65, -.65);
+			if (gyroD >= angleOff && rightEnc.getDistance() >= rightDis3){
+				driveTrain.tankDrive(-.8, -.85);
+			}
+			if (gyroD <= -angleOff && rightEnc.getDistance() >= rightDis3){
+				driveTrain.tankDrive(-.85, -.8);
+			}
+			if (gyroD <= angleOff && gyroD >= -angleOff && rightEnc.getDistance() >= rightDis3){
+				driveTrain.tankDrive(-.8, -.8);
+			}
+			if (encRD <= rightDis3) {
+				s1.set(false);
+				gyro.reset();
+				step++;
+			}
+			break;
+		case 7:	// Rotate 90°
+			driveTrain.tankDrive(-.75, .75);
+			if (gyroD >= rightAng2) {
+				gyro.reset();
+				rightEnc.reset();
+				step++;
+			}
+			break;
+		case 8:	// Forward ~ 100 in
+			driveTrain.tankDrive(.75, .75);
+			if (gyroD >= angleOff && rightEnc.getDistance() <= rightDis4){
+				driveTrain.tankDrive(.85, .8);
+			}
+			if (gyroD <= -angleOff && rightEnc.getDistance() <= rightDis4){
+				driveTrain.tankDrive(.8, .85);
+			}
+			if (gyroD <= angleOff && gyroD >= -angleOff && rightEnc.getDistance() <= rightDis4){
+				driveTrain.tankDrive(.8, .8);
+			}
+			if (encRD >= rightDis4) {
+				step++;
+			}
+			break;
+		case 9:	// Rotate -90°
+			driveTrain.tankDrive(.75, -.75);
+			if (gyroD >= rightAng3) {
+				gyro.reset();
+				rightEnc.reset();
+				step++;
+			}
+			break;
+		case 10: // Forward ~ 100 in
+			driveTrain.tankDrive(.75, .75);
+			if (gyroD >= angleOff && rightEnc.getDistance() <= rightDis5){
+				driveTrain.tankDrive(.85, .8);
+			}
+			if (gyroD <= -angleOff && rightEnc.getDistance() <= rightDis5){
+				driveTrain.tankDrive(.8, .85);
+			}
+			if (gyroD <= angleOff && gyroD >= -angleOff && rightEnc.getDistance() <= rightDis5){
+				driveTrain.tankDrive(.8, .8);
+			}
+			if (encRD >= rightDis5) {
+				driveTrain.tankDrive(0, 0);
+			}
+			break;
+		case 11: // Forward ~ 250 in
+			driveTrain.tankDrive(.75, .75);
+			if (gyroD >= angleOff && rightEnc.getDistance() <= rightDis6){
+				driveTrain.tankDrive(.85, .8);
+			}
+			if (gyroD <= -angleOff && rightEnc.getDistance() <= rightDis6){
+				driveTrain.tankDrive(.8, .85);
+			}
+			if (gyroD <= angleOff && gyroD >= -angleOff && rightEnc.getDistance() <= rightDis6){
+				driveTrain.tankDrive(.8, .8);
+			}
+			if (encRD >= rightDis6) {
+				step++;
+			}
+			break;
+		case 12: // Rotate -90°
+			driveTrain.tankDrive(.75, -.75);
+			if (gyroD <= rightAng4) {
+				gyro.reset();
+				rightEnc.reset();
+				step++;
+			}
+			break;
+		case 13: // Forward ~ 100 in
+			driveTrain.tankDrive(.75, .75);
+			if (gyroD >= angleOff && rightEnc.getDistance() <= rightDis7){
+				driveTrain.tankDrive(.85, .8);
+			}
+			if (gyroD <= -angleOff && rightEnc.getDistance() <= rightDis7){
+				driveTrain.tankDrive(.8, .85);
+			}
+			if (gyroD <= angleOff && gyroD >= -angleOff && rightEnc.getDistance() <= rightDis7){
+				driveTrain.tankDrive(.8, .8);
+			}
+			if (encRD >= rightDis7) {
+				driveTrain.tankDrive(0, 0);
+			}
+			break;
+		}
+	} else if (ch4.get() == false) { // Neutral Autonomous 
+		driveTrain.tankDrive(0, 0);
+		}
+	}
+	
+	@Override
+    public void teleopInit() {
+		// Booleans
+			inTake = false;
+			outTake = false;
+			killLift = false;
+			killIntake = false;
+			killClimb = false;
+			floorMov = false;
+			switchMov = false;
+			scaleLMov = false;
+			scaleHMov = false;
+		
+		// Lift Positions
+			floorPos = 0;
+			switchPos = 0;
+			scaleLPos = 0;
+			scaleHPos = 0;
+    }
+    
+	@Override
+    public void teleopPeriodic() {
+		
+		// Motor Controllers
+			// Differential Drive Controls
+	    	double lValue = leftStick.getY() * -1; // Left Drive Speed
+	    	double rValue = rightStick.getY() * -1; // Right Drive Speed
+	    	driveTrain.tankDrive(lValue, rValue); // Tank Drive Control
+	    	
+	    	// Intake
+	    	if (maniStick.getRawButton(1)) {
+	    		inTake = true;
+	    		outTake = false;
+	    	}
+	    	if (inTake == true && killIntake == false) {
+	    		m6.set(1);
+	    	}
+	    	if (maniStick.getRawButton(2)) {
+	    		outTake = true;
+	    		inTake = false;
+	    	}
+	    	if (outTake == true && killIntake == false) {
+	    		m6.set(-1);
+	    	}
+	    	
+	    	// Climber
+	    	if (maniStick.getRawButton(11) && killClimb == false) {
+	    		m7.set(1);
+	    	} else if (maniStick.getRawButton(12)) {
+	    		m7.set(-1);
+	    	}
+    	
+    	// Pneumatics
+	    	// Lifter
+	    	if (maniStick.getY() >= .25) {
+	    		s1.set(true); // Moves Lifter Up
+	    	} else if (rightStick.getY() <= -.25) {
+	    		s1.set(false); // Moves Lifter Down
+	    	}
+	    	
+	    	// Gripper
+	    	if (maniStick.getRawButton(3)) {
+	    		s2.set(false); // Opens Gripper
+	    	} else if (maniStick.getRawButton(4)) {
+	    		s2.set(true); // Closes Gripper
+	    	}
+	    	
+	    	// Gear Shifter
+	    	if (leftStick.getRawButton(1)) {
+	    		s3.set(true); // Change Speed To 100%
+	    	} else if (rightStick.getRawButton(1)) {
+	    		s3.set(false); // Change Speed To 50%
+	    	}
+	    	
+	    	// Camera POV
+	    	if (leftStick.getRawButton(7)) {
+	    		s4.set(true); // Move Camera POV Down
+	    	} else if (rightStick.getRawButton(7)) {
+	    		s4.set(false); // Move Camera POV Up
+	    	}
+	    	
+	    // Encoder Presets
+	    	// Floor Position
+	    	if (maniStick.getRawButton(7)) {
+	    		floorMov = true;
+				switchMov = false;
+				scaleLMov = false;
+				scaleHMov = false;
+	    	}
+	    		
+			if (floorMov == true && killLift == false) {	
+				if (liftEnc.getDistance() < floorPos){
+					m5.set(1);
+				} else if (liftEnc.getDistance() > floorPos){
+					m5.set(-1);
+				} else if (liftEnc.getDistance() == floorPos){
+					m5.set(0);
+					floorMov = false;
+				}
+			}
+	    	
+	    	// Switch Position
+	    	if (maniStick.getRawButton(8)) {
+	    		floorMov = false;
+				switchMov = true;
+				scaleLMov = false;
+				scaleHMov = false;
+	    	}
+	    	
+	    	if (switchMov == true && killLift == false) {	
+				if (liftEnc.getDistance() < switchPos){
+					m5.set(1);
+				} else if (liftEnc.getDistance() > switchPos){
+					m5.set(-1);
+				} else if (liftEnc.getDistance() == switchPos){
+					m5.set(0);
+					switchMov = false;
+				}
+			}
+	    	
+	    	// Low Scale Position
+	    	if (maniStick.getRawButton(9)) {
+	    		floorMov = false;
+				switchMov = false;
+				scaleLMov = true;
+				scaleHMov = false;
+	    	}
+	    	
+	    	if (scaleLMov == true && killLift == false) {	
+				if (liftEnc.getDistance() < scaleLPos){
+					m5.set(1);
+				} else if (liftEnc.getDistance() > scaleLPos){
+					m5.set(-1);
+				} else if (liftEnc.getDistance() == scaleLPos){
+					m5.set(0);
+					scaleLMov = false;
+				}
+			}
+	    	
+	    	// High Scale Position
+	    	if (maniStick.getRawButton(10)) {
+	    		floorMov = false;
+				switchMov = false;
+				scaleLMov = false;
+				scaleHMov = true;
+	    	}
+	    	
+	    	if (scaleHMov == true && killLift == false) {	
+				if (liftEnc.getDistance() < scaleHPos){
+					m5.set(1);
+				} else if (liftEnc.getDistance() > scaleHPos){
+					m5.set(-1);
+				} else if (liftEnc.getDistance() == scaleHPos){
+					m5.set(0);
+					scaleHMov = false;
+				}
+			}
+	    	
+	    // Limit Switches
+	    	// Cube Pickup
+			if (inTake == true && autoCube.get() == false) {
+				inTake = false; // Disables Intake
+	    		killIntake = true; // Disables Intake
+			}
+			
+			// Climbed
+			if (topRung.get() == false) {
+				killClimb = true;
+			}
+				
+		// Kill Commands
+			// Kill Lift
+			if (maniStick.getRawButton(5)) {
+				killLift = true;
+				floorMov = false;
+				switchMov = false;
+				scaleLMov = false;
+				scaleHMov = false;
+			}
+			if (killLift == true) {
+				m5.set(0);
+				killLift = false;
+			}
+			
+			// Kill Intake
+			if (maniStick.getRawButton(6)) {
+				killIntake = true;
+				inTake = false;
+				outTake = false;
+			}
+			if (killIntake == true) {
+				m6.set(0);
+				killIntake = false;
+			}
+			
+			// Kill Climber
+			if (killClimb = true) {
+				m7.set(0);
+				killClimb = false;
+			}
+    }
+}
