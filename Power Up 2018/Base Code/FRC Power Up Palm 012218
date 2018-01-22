@@ -1083,4 +1083,4 @@ public class Robot extends IterativeRobot {
 				killClimb = false;
 			}
     }
-}xd
+}
