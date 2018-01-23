@@ -14,19 +14,21 @@ Right Stick Buttons
  * Y - Right Drive
 
 Manipulator Stick Buttons
- * 1 - Cube Intake		
- * 2 - Cube Outtake		
- * 3 - Open Gripper			
+ * 1 - Cube Intake		// Y - Back 
+ * 2 - Cube Outtake		// Y - Forward
+ * 3 - Open Gripper	
  * 4 - Close Gripper			
  * 5 - Kill Lift
  * 6 - Kill Intake
  * 7 - Floor Position
  * 8 - Switch Position 
- * 9 - Low Scale Position	// Remove Maybe ---> Lift Retractor
- * 10 - High Scale Position	// Remove Maybe ---> Lower Retractor
+ * 9 - Low Scale Position
+ * 10 - High Scale Position	
  * 11 - Climber Up
  * 12 - Climber Down
- * Y - Lifter
+ * Y - Lifter	// Intake
+ * POV Up - 
+ * POV Down - 
 */
 
 import edu.wpi.first.wpilibj.AnalogGyro;
@@ -51,10 +53,11 @@ public class Robot extends IterativeRobot {
 	WPI_TalonSRX m2 = new WPI_TalonSRX(2); // Front Right Motor
 	WPI_TalonSRX m3 = new WPI_TalonSRX(3); // Back Left Motor (Slave)
 	WPI_TalonSRX m4 = new WPI_TalonSRX(4); // Back Right Motor (Slave)
-	WPI_TalonSRX m5 = new WPI_TalonSRX(5); // Lift Motor	//**//
-	WPI_TalonSRX m6 = new WPI_TalonSRX(6); // Intake Motor
+	WPI_TalonSRX m5 = new WPI_TalonSRX(5); // Left Intake Motor
+	WPI_TalonSRX m6 = new WPI_TalonSRX(6); // Right Intake Motor
 	WPI_TalonSRX m7 = new WPI_TalonSRX(7); // Climb Motor
-	DifferentialDrive driveTrain = new DifferentialDrive(m1, m2);	// Main Drive Train
+	WPI_TalonSRX m8 = new WPI_TalonSRX(8); // Lift Motor	//**//
+	DifferentialDrive driveTrain = new DifferentialDrive(m1, m2); // Main Drive Train
 	Solenoid s1 = new Solenoid(20, 1); // Lift  //**//
 	Solenoid s2 = new Solenoid(20, 2); // Grip
 	Solenoid s3 = new Solenoid(20, 3); // Gear Shift
@@ -902,6 +905,10 @@ public class Robot extends IterativeRobot {
 			// Differential Drive Controls
 	    	double lValue = leftStick.getY() * -1; // Left Drive Speed
 	    	double rValue = rightStick.getY() * -1; // Right Drive Speed
+	    	double lIntake = maniStick.getY() * 1; // Left Intake Speed		Y - Axis
+	    	double rIntake = maniStick.getY() * -1; // Right Intake Speed 	Y - Axis
+	    	double loIntake = maniStick.getZ() * 1; // Left Intake Speed	Z - Axis
+	    	double roIntake = maniStick.getZ() * -1; // Right Intake Speed	Z - Axis
 	    	driveTrain.tankDrive(lValue, rValue); // Tank Drive Control
 	    	
 	    	// Intake
@@ -920,18 +927,42 @@ public class Robot extends IterativeRobot {
 	    		m6.set(-1);
 	    	}
 	    	
+	    	/*
+	    	// Intake 2.0
+	    	if (maniStick.getY() <= -.25) {
+	    		m5.set(lIntake); // Starts Left Outtake
+	    		m6.set(rIntake); // Starts Right Outtake
+	    	} else if (maniStick.getY() >= .25) {
+	    		m5.set(lIntake); // Starts Left Intake
+	    		m6.set(rIntake); // Starts Right Intake
+	    	} else if (maniStick.getZ() <= -.25) {
+	    		m5.set(loIntake); // Starts Left Intake
+	    	} else if (maniStick.getZ() >= .25) {
+	    		m6.set(roIntake); // Starts Right Intake
+	    	}
+	    	*/
+	    	
 	    	// Climber
 	    	if (maniStick.getRawButton(11) && killClimb == false) {
 	    		m7.set(1);
 	    	} else if (maniStick.getRawButton(12)) {
 	    		m7.set(-1);
 	    	}
+	    	
+	    	// Lifter 2.0
+	    	if (maniStick.getPOV() == 90) {
+	    		m8.set(1);
+	    	} else if (maniStick.getPOV() == 270) {
+	    		m8.set(-1);
+	    	} else {
+	    		m8.set(0);
+	    	}
     	
     	// Pneumatics
 	    	// Lifter
-	    	if (maniStick.getY() >= .25) {
+	    	if (maniStick.getY() <= -.25) {
 	    		s1.set(true); // Moves Lifter Up
-	    	} else if (rightStick.getY() <= -.25) {
+	    	} else if (maniStick.getY() >= .25) {
 	    		s1.set(false); // Moves Lifter Down
 	    	}
 	    	
@@ -942,7 +973,7 @@ public class Robot extends IterativeRobot {
 	    		s2.set(true); // Closes Gripper
 	    	}
 	    	
-	    	// Gear Shifter
+	    	// Gear Shifter OR Drive Shifter
 	    	if (leftStick.getRawButton(1)) {
 	    		s3.set(true); // Change Speed To 100%
 	    	} else if (rightStick.getRawButton(1)) {
@@ -967,11 +998,11 @@ public class Robot extends IterativeRobot {
 	    		
 			if (floorMov == true && killLift == false) {	
 				if (liftEnc.getDistance() < floorPos){
-					m5.set(1);
+					m8.set(1);
 				} else if (liftEnc.getDistance() > floorPos){
-					m5.set(-1);
+					m8.set(-1);
 				} else if (liftEnc.getDistance() == floorPos){
-					m5.set(0);
+					m8.set(0);
 					floorMov = false;
 				}
 			}
@@ -986,11 +1017,11 @@ public class Robot extends IterativeRobot {
 	    	
 	    	if (switchMov == true && killLift == false) {	
 				if (liftEnc.getDistance() < switchPos){
-					m5.set(1);
+					m8.set(1);
 				} else if (liftEnc.getDistance() > switchPos){
-					m5.set(-1);
+					m8.set(-1);
 				} else if (liftEnc.getDistance() == switchPos){
-					m5.set(0);
+					m8.set(0);
 					switchMov = false;
 				}
 			}
@@ -1005,11 +1036,11 @@ public class Robot extends IterativeRobot {
 	    	
 	    	if (scaleLMov == true && killLift == false) {	
 				if (liftEnc.getDistance() < scaleLPos){
-					m5.set(1);
+					m8.set(1);
 				} else if (liftEnc.getDistance() > scaleLPos){
-					m5.set(-1);
+					m8.set(-1);
 				} else if (liftEnc.getDistance() == scaleLPos){
-					m5.set(0);
+					m8.set(0);
 					scaleLMov = false;
 				}
 			}
@@ -1024,11 +1055,11 @@ public class Robot extends IterativeRobot {
 	    	
 	    	if (scaleHMov == true && killLift == false) {	
 				if (liftEnc.getDistance() < scaleHPos){
-					m5.set(1);
+					m8.set(1);
 				} else if (liftEnc.getDistance() > scaleHPos){
-					m5.set(-1);
+					m8.set(-1);
 				} else if (liftEnc.getDistance() == scaleHPos){
-					m5.set(0);
+					m8.set(0);
 					scaleHMov = false;
 				}
 			}
@@ -1062,7 +1093,7 @@ public class Robot extends IterativeRobot {
 				scaleHMov = false;
 			}
 			if (killLift == true) {
-				m5.set(0);
+				m8.set(0);
 				killLift = false;
 			}
 			
