@@ -36,25 +36,24 @@ Manipulator Stick Buttons
  * POV Down (180) - Lifter Down
 */
 
+import com.kauailabs.navx.frc.AHRS;
+import com.ctre.phoenix.motorcontrol.can.*;
+import com.ctre.phoenix.motion.SetValueMotionProfile;
+import com.ctre.phoenix.motorcontrol.ControlMode;
 import edu.wpi.first.wpilibj.AnalogGyro;
 import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.CameraServer;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.Encoder;
+import edu.wpi.first.wpilibj.internal.HardwareHLUsageReporting;
 import edu.wpi.first.wpilibj.IterativeRobot;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.SPI;
 import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj.drive.DifferentialDrive;
-
-import com.kauailabs.navx.frc.AHRS;
-import com.ctre.phoenix.motorcontrol.can.*;
 import java.util.function.BinaryOperator;
-import com.ctre.phoenix.motion.SetValueMotionProfile;
-import com.ctre.phoenix.motorcontrol.ControlMode;
-import edu.wpi.first.wpilibj.internal.HardwareHLUsageReporting;
 
 public class Robot extends IterativeRobot {
 	
@@ -76,14 +75,16 @@ public class Robot extends IterativeRobot {
 	Solenoid s4 = new Solenoid(20, 4); // CameraPOV
 	DigitalInput gripperDown = new DigitalInput(1); // Hall Sensor
 	DigitalInput autoCube = new DigitalInput(2); // Auto Grip and Retract With Cube
+	// DigitalInput autoCubeL = new DigitalInput(2);
+	// DigitalInput autoCubeR = new DigitalInput(2);
 	DigitalInput topRung = new DigitalInput(3); // Fully Climbed Rung
 	Encoder leftEnc = new Encoder(4, 5, false, Encoder.EncodingType.k2X); // Left Drive Encoder
 	Encoder rightEnc = new Encoder(6, 7, false, Encoder.EncodingType.k2X); // Right Drive Encoder
 	Encoder liftEnc = new Encoder(8, 9, false, Encoder.EncodingType.k2X); // Lift Encoder
 	AnalogGyro gyro = new AnalogGyro(0); // Gyroscope
+	private AHRS navex = new AHRS(SPI.Port.kMXP);
 	DriverStation.Alliance color; // Alliance Color
 	int step = 1; // Initial Step Value
-	private AHRS navex = new AHRS(SPI.Port.kMXP);
 	
 	// Booleans
 		boolean inTake; // Run Intake
@@ -95,10 +96,16 @@ public class Robot extends IterativeRobot {
 		boolean switchMov; // Move Lifter To Switch
 		boolean scaleLMov; // Move Lifter To Low Scale
 		boolean scaleHMov; // Move Lifter To High Scale
-		boolean gripCube; // Grips Cube
+		boolean gripCube; // Grips Cube and Stops Intake
 		
-		boolean good90;
-		boolean bad90;
+		boolean good90; // Turn 90 Degrees
+		boolean bad90; // Turn -90 Degrees
+		
+	// Lift Positions
+		double floorPos; // Floor Position
+		double switchPos; // Switch Position
+		double scaleLPos; // Low Scale Position
+		double scaleHPos; // High Scale Position
 	
 	// Autonomous
 		// Selection
@@ -106,12 +113,6 @@ public class Robot extends IterativeRobot {
 			DigitalInput ch2 = new DigitalInput(11); // Middle Switch Score/Autoline
 			DigitalInput ch3 = new DigitalInput(12); // Right Switch Score/Autoline
 			DigitalInput ch4 = new DigitalInput(13); // Null
-			
-		// Lift Positions
-			double floorPos;
-			double switchPos;
-			double scaleLPos;
-			double scaleHPos;
 				
 		// Distances
 			 // Left Side Switch Scoring
@@ -191,6 +192,13 @@ public class Robot extends IterativeRobot {
 			gyro.calibrate();
 			gyro.initGyro();
 			gyro.reset();
+			navex.calibrate();
+			navex.reset();
+			
+		// Encoders
+			leftEnc.reset();
+			rightEnc.reset();
+			liftEnc.reset();
 		
 		// Slaves
 			m3.follow(m1); // Back Left Motor (Slave) Follows Front Left Motor
@@ -203,7 +211,7 @@ public class Robot extends IterativeRobot {
 	@Override
     public void autonomousInit() {
 		
-		color = DriverStation.getInstance().getAlliance();
+		// color = DriverStation.getInstance().getAlliance();
 		
 		// Autonomous Distances (Encoder)	
 			 // Left Side Switch Scoring
@@ -1037,18 +1045,18 @@ public class Robot extends IterativeRobot {
 					floorMov = false;
 				}
 			}
-				
-				
-				
+					
+		// Navex Turning	
+			// Right
 			if (leftStick.getRawButton(2)) {
 				good90 = true;
 				bad90 = false;
 			}
 			
 			if (good90 == true) {
-				driveTrain.tankDrive(-1, 1);
+				driveTrain.tankDrive(1, -1);
 			}
-			if (navexD <= -90) {
+			if (navexD >= 90) {
 				driveTrain.tankDrive(0, 0);
 				good90 = false;
 				navex.reset();
