@@ -1030,9 +1030,9 @@ public class Robot extends IterativeRobot {
 	    	// Floor Position
 	    	if (maniStick.getRawButton(7)) {
 	    		floorMov = true;
-				switchMov = false;
-				scaleLMov = false;
-				scaleHMov = false;
+			switchMov = false;
+			scaleLMov = false;
+			scaleHMov = false;
 	    	}
 	    		
 			if (floorMov == true && killLift == false) {	
@@ -1047,7 +1047,7 @@ public class Robot extends IterativeRobot {
 			}
 					
 		// Navex Turning	
-			// Right
+			// Right (90)
 			if (leftStick.getRawButton(2)) {
 				good90 = true;
 				bad90 = false;
@@ -1062,27 +1062,26 @@ public class Robot extends IterativeRobot {
 				navex.reset();
 			}
 			
-			/*
+			// Left (-90)
 			if (rightStick.getRawButton(2)) {
 				good90 = false;
 				bad90 = true;
 			}
-			
-			if (bad90 == true && navexD <= -90) {
-				driveTrain.tankDrive(.4, -4);
-			} else {
-				bad90 = false;
+			if (good90 == true) {
+				driveTrain.tankDrive(-1, 1);
 			}
-			*/
-	    	
-			
+			if (navexD <= -90) {
+				driveTrain.tankDrive(0, 0);
+				good90 = false;
+				navex.reset();
+			}
 			
 	    	// Switch Position
 	    	if (maniStick.getRawButton(8)) {
 	    		floorMov = false;
-				switchMov = true;
-				scaleLMov = false;
-				scaleHMov = false;
+			switchMov = true;
+			scaleLMov = false;
+			scaleHMov = false;
 	    	}
 	    	
 	    	if (switchMov == true && killLift == false) {	
@@ -1099,9 +1098,9 @@ public class Robot extends IterativeRobot {
 	    	// Low Scale Position
 	    	if (maniStick.getRawButton(9)) {
 	    		floorMov = false;
-				switchMov = false;
-				scaleLMov = true;
-				scaleHMov = false;
+			switchMov = false;
+			scaleLMov = true;
+			scaleHMov = false;
 	    	}
 	    	
 	    	if (scaleLMov == true && killLift == false) {	
@@ -1118,9 +1117,9 @@ public class Robot extends IterativeRobot {
 	    	// High Scale Position
 	    	if (maniStick.getRawButton(10)) {
 	    		floorMov = false;
-				switchMov = false;
-				scaleLMov = false;
-				scaleHMov = true;
+			switchMov = false;
+			scaleLMov = false;
+			scaleHMov = true;
 	    	}
 	    	
 	    	if (scaleHMov == true && killLift == false) {	
@@ -1148,7 +1147,15 @@ public class Robot extends IterativeRobot {
 				gripCube = false;
 			}
 			
-			// Climbed
+		/*	
+		// Cube Pickup 2.0
+			if (autoCube.get() == false) {
+			    gripCube = true; // Grips Cube
+			    killIntake = true;
+			}
+		*/	
+			
+		// Climbed
 			if (topRung.get() == false) {
 				killClimb = true;
 			}
