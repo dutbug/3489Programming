@@ -14,8 +14,8 @@ Right Stick Buttons
  * Y - Right Drive
 
 Manipulator Stick Buttons
- * 1 - Cube Intake		// Y - Back 
- * 2 - Cube Outtake		// Y - Forward
+ * 1 - **Retractor Up?**	
+ * 2 - **Retractor Down?**
  * 3 - Open Gripper	
  * 4 - Close Gripper			
  * 5 - Kill Lift
@@ -26,9 +26,14 @@ Manipulator Stick Buttons
  * 10 - High Scale Position	
  * 11 - Climber Up
  * 12 - Climber Down
- * Y - Lifter	// Intake
- * POV Up - 
- * POV Down - 
+ * +X - Only Left Outtake
+ * -X - Only Right Outake 
+ * +Y - Cube Outtake	
+ * -Y - Cube Intake
+ * +Z - Invert Left Intake
+ * -Z - Invert Right Intake
+ * POV Up (0) - Lifter Up
+ * POV Down (180) - Lifter Down
 */
 
 import edu.wpi.first.wpilibj.AnalogGyro;
