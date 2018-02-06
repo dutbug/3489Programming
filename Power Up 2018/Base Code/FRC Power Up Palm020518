@@ -1115,16 +1115,30 @@ public class Robot extends IterativeRobot {
 	    	}
 	    				
 	    	if (good90 == true) {
-	    		if (navxY < 80) {
-	    			driveTrain.tankDrive(1, -1);
-	    		} else if (navxY > 80 && navxY < 87) {
-	    			driveTrain.tankDrive(.5, -.5);
+	    		if (navxY < 75) {
+	    			driveTrain.tankDrive(.8, -.8);
+	    		} else if (navxY > 75 && navxY < 87) {
+	    			driveTrain.tankDrive(.4, -.4);
 	    		} else if (navxY > 87) {
 	    			driveTrain.tankDrive(0, 0);
 	    			good90 = false;
 	    			//navx.reset();
 	    		}
 	    	}
+		
+		/* 
+		if (good90 == true) {
+	    		if (heading < 75) {
+	    			driveTrain.tankDrive(.8, -.8);
+	    		} else if (heading > 75 && heading < 87) {
+	    			driveTrain.tankDrive(.4, -.4);
+	    		} else if (heading > 87) {
+	    			driveTrain.tankDrive(0, 0);
+	    			good90 = false;
+	    			//navx.reset();
+	    		}
+	    	}
+		*/
 	    				
 	    	// Left (-90)
 	    	if (rightStick.getRawButton(2)) {
@@ -1134,16 +1148,30 @@ public class Robot extends IterativeRobot {
 	    	}
 	    	
 	    	if (bad90 == true) {
-	    		if (navxY > -80) {
-	    			driveTrain.tankDrive(-1, 1);
-	    		} else if (navxY < -80 && navxY > -87) {
-	    			driveTrain.tankDrive(-.5, .5);
+	    		if (navxY > -75) {
+	    			driveTrain.tankDrive(-.8, .8);
+	    		} else if (navxY < -75 && navxY > -87) {
+	    			driveTrain.tankDrive(-.4, .4);
 	    		} else if (navxY < -87) {
 	    			driveTrain.tankDrive(0, 0);
 	    			bad90 = false;
 	    			//navx.reset();
 	    		}
 	    	}
+		
+		/* 
+		if (bad90 == true) {
+	    		if (heading > 285) {
+	    			driveTrain.tankDrive(.8, -.8);
+	    		} else if (heading < 285 && heading > 273) {
+	    			driveTrain.tankDrive(.4, -.4);
+	    		} else if (heading < 273) {
+	    			driveTrain.tankDrive(0, 0);
+	    			bad90 = false;
+	    			//navx.reset();
+	    		}
+	    	}
+		*/
 	    	
 	    // Limit Switches				
 			// Cube Pickup 2.0
