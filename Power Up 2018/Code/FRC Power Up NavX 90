@@ -1,0 +1,64 @@
+package org.usfirst.frc.team3489.robot;
+
+import edu.wpi.first.wpilibj.IterativeRobot;
+import edu.wpi.first.wpilibj.Joystick;
+import com.kauailabs.navx.frc.*;
+import edu.wpi.first.wpilibj.SPI;
+import edu.wpi.first.wpilibj.drive.DifferentialDrive;
+import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
+
+public class Robot extends IterativeRobot {
+
+	private AHRS navX = new AHRS(SPI.Port.kMXP);
+	private Joystick leftStick = new Joystick(0);
+	private Joystick rightStick = new Joystick(1);
+	private WPI_TalonSRX frontL = new WPI_TalonSRX(1);
+	private WPI_TalonSRX frontR = new WPI_TalonSRX(2);
+	private WPI_TalonSRX rearL = new WPI_TalonSRX(3);
+	private WPI_TalonSRX rearR = new WPI_TalonSRX(4);
+	private DifferentialDrive drive = new DifferentialDrive (frontL, frontR);
+	
+	double turnSpeed;
+	
+	boolean good90 = false;
+	boolean bad90 = false;
+	
+	@Override
+	public void robotInit() {
+		rearL.follow(frontL);
+		rearR.follow(frontR);
+	}
+
+	@Override
+	public void teleopPeriodic() {
+		double leftPV = leftStick.getY() * -1;
+		double rightPV = rightStick.getY() * -1;
+		drive.tankDrive(leftPV, rightPV);
+		
+		double heading = navX.getFusedHeading();
+		System.out.println(navX.getFusedHeading());
+	   	
+	    // NavX Turning	
+	    	// Right (90)
+	    	if (leftStick.getRawButton(2)) {
+	    		good90 = true;
+	    		bad90 = false;
+	    		navX.reset();
+	    	}
+	    	
+	    	if (good90 == true) {
+		    	if (heading < 45 || heading > 359) {
+		    		turnSpeed = .8;
+		    	} else if (heading > 45 && heading < 86) {
+		    		turnSpeed = .58;
+		    	} else if (heading > 86) {
+		    		turnSpeed = 0;
+		    		good90 = false;
+		    	}	
+	    	}
+	    				
+	    	if (good90 == true) {
+	    		drive.tankDrive(turnSpeed, -1 * turnSpeed);
+	    	}	    	
+	  }
+}
