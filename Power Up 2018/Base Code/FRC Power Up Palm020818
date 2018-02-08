@@ -40,7 +40,6 @@ import com.kauailabs.navx.frc.AHRS;
 import com.ctre.phoenix.motorcontrol.can.*;
 import com.ctre.phoenix.motion.SetValueMotionProfile;
 import com.ctre.phoenix.motorcontrol.ControlMode;
-import edu.wpi.first.wpilibj.AnalogGyro;
 import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.CameraServer;
 import edu.wpi.first.wpilibj.DigitalInput;
@@ -82,7 +81,6 @@ public class Robot extends IterativeRobot {
 	Encoder leftEnc = new Encoder(4, 5, false, Encoder.EncodingType.k2X); // Left Drive Encoder
 	Encoder rightEnc = new Encoder(6, 7, false, Encoder.EncodingType.k2X); // Right Drive Encoder
 	Encoder liftEnc = new Encoder(8, 9, false, Encoder.EncodingType.k2X); // Lift Encoder
-	AnalogGyro gyro = new AnalogGyro(0); // Gyroscope
 	private AHRS navx = new AHRS(SPI.Port.kMXP); // NavX Component
 	DriverStation.Alliance color; // Alliance Color
 	int step = 1; // Initial Step Value
@@ -102,80 +100,12 @@ public class Robot extends IterativeRobot {
 		boolean user; // User Button in Disabled
 		boolean good90; // Turn 90 Degrees
 		boolean bad90; // Turn -90 Degrees
-		
-	// Lift Positions
-		double floorPos; // Floor Position
-		double switchPos; // Switch Position
-		double scaleLPos; // Low Scale Position
-		double scaleHPos; // High Scale Position
 	
-	// Autonomous
-		// Selection
-			DigitalInput ch1 = new DigitalInput(0); // Left Switch Score/Autoline
-			DigitalInput ch2 = new DigitalInput(1); // Middle Switch Score/Autoline
-			DigitalInput ch3 = new DigitalInput(2); // Right Switch Score/Autoline
-			DigitalInput ch4 = new DigitalInput(11); // Null
-				
-		// Distances
-			 // Left Side Switch Scoring
-				double leftDis1;
-				double leftDis2;
-				double leftDis3;
-				double leftDis4;
-				double leftDis5;
-			 // Left Side Switch Driving
-				double leftDis6;
-				double leftDis7;
-			 // Middle Left Switch Scoring
-				double midlDis1;
-				double midlDis2;
-				double midlDis3;
-				double midlDis4;
-				double midlDis5;
-				double midlDis6;
-			 // Middle Right Switch Scoring
-				double midrDis1;
-				double midrDis2;
-				double midrDis3;
-				double midrDis4;
-				double midrDis5;
-				double midrDis6;
-			 // Right Side Switch Scoring
-				double rightDis1;
-				double rightDis2;
-				double rightDis3;
-				double rightDis4;
-				double rightDis5;
-			 // Right Side Switch Driving
-				double rightDis6;
-				double rightDis7;
-		
-		// Angles
-			 // Left Side Switch Scoring
-				double leftAng1;
-				double leftAng2;
-				double leftAng3;
-			 // Left Side Switch Driving
-				double leftAng4;
-			 // Middle Left Switch Scoring
-				double midlAng1;
-				double midlAng2;
-				double midlAng3;
-				double midlAng4;
-			 // Middle Right Switch Scoring
-				double midrAng1;
-				double midrAng2;
-				double midrAng3;
-				double midrAng4;
-		     // Right Side Switch Scoring
-				double rightAng1;
-				double rightAng2;
-				double rightAng3;
-			 // Right Side Switch Driving
-				double rightAng4;
-			 // Angle Offset
-				double angleOff;
-				double turnSpeed;
+	// Autonomous Selection
+		DigitalInput ch1 = new DigitalInput(0); // Left Switch Score/Autoline
+		DigitalInput ch2 = new DigitalInput(1); // Middle Switch Score/Autoline
+		DigitalInput ch3 = new DigitalInput(2); // Right Switch Score/Autoline
+		DigitalInput ch4 = new DigitalInput(11); // Null
 
 	@Override
     public void robotInit() {
@@ -191,9 +121,7 @@ public class Robot extends IterativeRobot {
 				// system.out.println("Failed Vision");
 			}
 				
-		// Gyroscope
-			gyro.calibrate();
-			gyro.initGyro();
+		// NavX
 			navx.reset();
 			navx.reset();
 			
@@ -215,68 +143,67 @@ public class Robot extends IterativeRobot {
 		
 		// Autonomous Distances (Encoder)	
 			 // Left Side Switch Scoring
-			 	leftDis1 = 300; //
-			 	leftDis2 = 100; //
-			 	leftDis3 = -100; //
-			 	leftDis4 = 100; //
-			 	leftDis5 = 100; //	
+			 	double leftDis1 = 300; //
+			 	double leftDis2 = 100; //
+			 	double leftDis3 = -100; //
+			 	double leftDis4 = 100; //
+			 	double leftDis5 = 100; //	
 			 // Left Side Switch Driving
-			 	leftDis6 = 500; //
-			 	leftDis7 = 100; //
+			 	double leftDis6 = 500; //
+			 	double leftDis7 = 100; //
 			 // Middle Left Switch Scoring
-			 	midlDis1 = 300; //
-			 	midlDis2 = 300; //
-			 	midlDis3 = 200; //
-			 	midlDis4 = 100; //
-			 	midlDis5 = -100; //
-			 	midlDis6 = 200; //
+			 	double midlDis1 = 300; //
+			 	double midlDis2 = 300; //
+			 	double midlDis3 = 200; //
+			 	double midlDis4 = 100; //
+			 	double midlDis5 = -100; //
+			 	double midlDis6 = 200; //
 			 // Middle Right Switch Scoring
-			 	midrDis1 = 300; //
-			 	midrDis2 = 300; //
-				midrDis3 = 200; //
-				midrDis4 = 100; //
-				midrDis5 = -100; //
-				midrDis6 = 200; //
+			 	double midrDis1 = 300; //
+			 	double midrDis2 = 300; //
+				double midrDis3 = 200; //
+				double midrDis4 = 100; //
+				double midrDis5 = -100; //
+				double midrDis6 = 200; //
 			 // Right Side Switch Scoring
-				rightDis1 = 300; //
-				rightDis2 = 100; //
-				rightDis3 = -100; //
-				rightDis4 = 100; //
-				rightDis5 = 100; //
+				double rightDis1 = 300; //
+				double rightDis2 = 100; //
+				double rightDis3 = -100; //
+				double rightDis4 = 100; //
+				double rightDis5 = 100; //
 			 // Right Side Switch Driving
-			 	rightDis6 = 500; //
-			 	rightDis7 = 100; //
+			 	double rightDis6 = 500; //
+			 	double rightDis7 = 100; //
 			 
-		// Autonomous Turn Angles (Gyro)	
+		// Autonomous Turn Angles (NavX)	
 			 // Left Side Switch Scoring
-				leftAng1 = 90; //
-				leftAng2 = -90; //
-				leftAng3 = 90; //
+				double leftAng1 = 90; //
+				double leftAng2 = -90; //
+				double leftAng3 = 90; //
 			 // Left Side Switch Driving
-				leftAng4 = 90; //
+				double leftAng4 = 90; //
 			 // Middle Left Switch Scoring
-				midlAng1 = -90; //
-				midlAng2 = 90; //
-				midlAng3 = 90; //
-				midlAng4 = -90; //
+				double midlAng1 = -90; //
+				double midlAng2 = 90; //
+				double midlAng3 = 90; //
+				double midlAng4 = -90; //
 			 // Middle Right Switch	Scoring
-				midrAng1 = 90; //
-				midrAng2 = -90; //
-				midrAng3 = -90; //
-				midrAng4 = 90; //
+				double midrAng1 = 90; //
+				double midrAng2 = -90; //
+				double midrAng3 = -90; //
+				double midrAng4 = 90; //
 			 // Right Side Switch Scoring
-				rightAng1 = -90; //
-				rightAng2 = 90; //
-				rightAng3 = -90; //
+				double rightAng1 = -90; //
+				double rightAng2 = 90; //
+				double rightAng3 = -90; //
 			 // Right Side Switch Driving
-				rightAng4 = -90; //
+				double rightAng4 = -90; //
 			 //Angle Offset
-				angleOff = .5; // Adjustment Angle For Driving With Gyroscope
+				double angleOff = .5; // Adjustment Angle For Driving With NavX
 
 		// Resets
 			leftEnc.reset();
 			rightEnc.reset();
-			gyro.reset();
 			navx.reset();
 			step = 1;
     }
@@ -286,8 +213,7 @@ public class Robot extends IterativeRobot {
 		
 			double encLD = leftEnc.getDistance() * -1; // Left Encoder Value
 			double encRD = rightEnc.getDistance() * 1; // Right Encoder Value
-			double gyroD = gyro.getAngle();	// Gyroscope Value
-			double navxY = navx.getYaw(); // NavX Y Value
+			double heading = navx.getFusedHeading(); // NavX Angle
 		
 			String gameData;
     	    gameData = DriverStation.getInstance().getGameSpecificMessage();
@@ -319,17 +245,22 @@ public class Robot extends IterativeRobot {
 				driveTrain.tankDrive(.8, .8);
 			}
 			if (encRD >= leftDis1) {
+				rightEnc.reset();
 				navx.reset();
 				step++;
 			}
 			break;
 		case 3:	// Rotate 90
-			driveTrain.tankDrive(1, -1);
-			if (navxY >= leftAng1) {
+		    	if (heading < 45 || heading > 359) {
+		    		driveTrain.tankDrive(.8, -.8);
+		    	} else if (heading > 45 && heading < 86) {
+		    		driveTrain.tankDrive(.58, -.58);
+		    	} else if (heading > 86) {
+		    		driveTrain.tankDrive(0, 0);
 				navx.reset();
 				rightEnc.reset();
 				step++;
-			}
+		    	}		
 			break;
 		case 4:	// Forward ~ 10 in
 			driveTrain.tankDrive(.8, .8);
@@ -371,12 +302,17 @@ public class Robot extends IterativeRobot {
 			}
 			break;
 		case 7:	// Rotate -90
-			driveTrain.tankDrive(-1, 1);
-			if (navxY <= leftAng2) {
+		    	if (heading > 315 || heading < 1) {
+		    		driveTrain.tankDrive(-.8, .8);
+		    	} else if (heading < 315 && heading > 274) {
+		    		driveTrain.tankDrive(-.58, .58);
+		    	} else if (heading < 274) {
+		    		driveTrain.tankDrive(0, 0);
 				navx.reset();
 				rightEnc.reset();
 				step++;
-			}
+		    	}
+	    	}	    
 			break;
 		case 8:	// Forward ~ 100 in
 			driveTrain.tankDrive(.8, .8);
@@ -394,12 +330,16 @@ public class Robot extends IterativeRobot {
 			}
 			break;
 		case 9:	// Rotate 90
-			driveTrain.tankDrive(1, -1);
-			if (navxY >= leftAng3) {
+		    	if (heading < 45 || heading > 359) {
+		    		driveTrain.tankDrive(.8, -.8);
+		    	} else if (heading > 45 && heading < 86) {
+		    		driveTrain.tankDrive(.58, -.58);
+		    	} else if (heading > 86) {
+		    		driveTrain.tankDrive(0, 0);
 				navx.reset();
 				rightEnc.reset();
 				step++;
-			}
+		    	}		
 			break;
 		case 10: // Forward ~ 100 in
 			driveTrain.tankDrive(.8, .8);
@@ -432,12 +372,16 @@ public class Robot extends IterativeRobot {
 			}
 			break;
 		case 12: // Rotate 90
-			driveTrain.tankDrive(1, -1);
-			if (navxY >= leftAng4) {
+		    	if (heading < 45 || heading > 359) {
+		    		driveTrain.tankDrive(.8, -.8);
+		    	} else if (heading > 45 && heading < 86) {
+		    		driveTrain.tankDrive(.58, -.58);
+		    	} else if (heading > 86) {
+		    		driveTrain.tankDrive(0, 0);
 				navx.reset();
 				rightEnc.reset();
 				step++;
-			}
+		    	}		
 			break;
 		case 13: // Forward ~ 100 in
 			driveTrain.tankDrive(.8, .8);
@@ -490,12 +434,18 @@ public class Robot extends IterativeRobot {
 			}
 			break;
 		case 3:	// Rotate -90
-			driveTrain.tankDrive(-1, 1);
-			if (navxY <= midlAng1) {
+			if (heading > 315 || heading < 1) {
+		    		driveTrain.tankDrive(-.8, .8);
+		    	} else if (heading < 315 && heading > 274) {
+		    		driveTrain.tankDrive(-.58, .58);
+		    	} else if (heading < 274) {
+		    		driveTrain.tankDrive(0, 0);
 				navx.reset();
 				rightEnc.reset();
 				step++;
-			}
+		    	}
+	    	}	    
+			break;
 		case 4:	// Forward ~ 130 in
 			driveTrain.tankDrive(.8, .8);
 			if (navxY >= angleOff && rightEnc.getDistance() <= midlDis2){
@@ -513,12 +463,16 @@ public class Robot extends IterativeRobot {
 			}
 			break;
 		case 5:	// Rotate 90
-			driveTrain.tankDrive(1, -1);
-			if (navxY >= midlAng2) {
+		    	if (heading < 45 || heading > 359) {
+		    		driveTrain.tankDrive(.8, -.8);
+		    	} else if (heading > 45 && heading < 86) {
+		    		driveTrain.tankDrive(.58, -.58);
+		    	} else if (heading > 86) {
+		    		driveTrain.tankDrive(0, 0);
 				navx.reset();
 				rightEnc.reset();
 				step++;
-			}
+		    	}		
 			break;
 		case 6:	// Forward ~ 75 in
 			driveTrain.tankDrive(.8, .8);
@@ -538,12 +492,16 @@ public class Robot extends IterativeRobot {
 			}
 			break;
 		case 7:	// Rotate 90
-			driveTrain.tankDrive(1, -1);
-			if (navxY >= midlAng3) {
+			if (heading < 45 || heading > 359) {
+		    		driveTrain.tankDrive(.8, -.8);
+		    	} else if (heading > 45 && heading < 86) {
+		    		driveTrain.tankDrive(.58, -.58);
+		    	} else if (heading > 86) {
+		    		driveTrain.tankDrive(0, 0);
 				navx.reset();
 				rightEnc.reset();
 				step++;
-			}
+		    	}		
 			break;
 		case 8:	// Forward ~ 10 in
 			driveTrain.tankDrive(.8, .8);
@@ -582,12 +540,17 @@ public class Robot extends IterativeRobot {
 			}
 			break;
 		case 11: // Rotate -90
-			driveTrain.tankDrive(-1, 1);
-			if (navxY <= midlAng4) {
+			if (heading > 315 || heading < 1) {
+		    		driveTrain.tankDrive(-.8, .8);
+		    	} else if (heading < 315 && heading > 274) {
+		    		driveTrain.tankDrive(-.58, .58);
+		    	} else if (heading < 274) {
+		    		driveTrain.tankDrive(0, 0);
 				navx.reset();
 				rightEnc.reset();
 				step++;
-			}
+		    	}
+	    	}	    
 			break;
 		case 12: // Forward ~ 100 in
 			driveTrain.tankDrive(.8, .8);
@@ -621,12 +584,16 @@ public class Robot extends IterativeRobot {
 			}
 			break;
 		case 14: // Rotate 90
-			driveTrain.tankDrive(1, -1);
-			if (navxY >= midrAng1) {
+		    	if (heading < 45 || heading > 359) {
+		    		driveTrain.tankDrive(.8, -.8);
+		    	} else if (heading > 45 && heading < 86) {
+		    		driveTrain.tankDrive(.58, -.58);
+		    	} else if (heading > 86) {
+		    		driveTrain.tankDrive(0, 0);
 				navx.reset();
 				rightEnc.reset();
 				step++;
-			}
+		    	}		
 			break;
 		case 15: // Forward ~ 130 in
 			driveTrain.tankDrive(.8, .8);
@@ -645,13 +612,18 @@ public class Robot extends IterativeRobot {
 			}
 			break;
 		case 16: // Rotate -90
-			driveTrain.tankDrive(-1, 1);
-			if (navxY <= midrAng2) {
-				navx.reset();
-				rightEnc.reset();
-				step++;
-			}
-			break;
+			if (heading > 315 || heading < 1) {
+					driveTrain.tankDrive(-.8, .8);
+				} else if (heading < 315 && heading > 274) {
+					driveTrain.tankDrive(-.58, .58);
+				} else if (heading < 274) {
+					driveTrain.tankDrive(0, 0);
+					navx.reset();
+					rightEnc.reset();
+					step++;
+				}
+			}	    
+				break;
 		case 17: // Forward ~ 75 in
 			driveTrain.tankDrive(.8, .8);
 			if (navxY >= angleOff && rightEnc.getDistance() >= midrDis3){
@@ -670,12 +642,17 @@ public class Robot extends IterativeRobot {
 			}
 			break;
 		case 18: // Rotate -90
-			driveTrain.tankDrive(-1, 1);
-			if (navxY <= midrAng3) {
+			if (heading > 315 || heading < 1) {
+		    		driveTrain.tankDrive(-.8, .8);
+		    	} else if (heading < 315 && heading > 274) {
+		    		driveTrain.tankDrive(-.58, .58);
+		    	} else if (heading < 274) {
+		    		driveTrain.tankDrive(0, 0);
 				navx.reset();
 				rightEnc.reset();
 				step++;
-			}
+		    	}
+	    	}	    
 			break;
 		case 19: // Forward ~ 10 in
 			driveTrain.tankDrive(.8, .8);
@@ -714,12 +691,16 @@ public class Robot extends IterativeRobot {
 			}
 			break;
 		case 22: // Rotate 90
-			driveTrain.tankDrive(1, -1);
-			if (navxY >= midrAng4) {
+		    	if (heading < 45 || heading > 359) {
+		    		driveTrain.tankDrive(.8, -.8);
+		    	} else if (heading > 45 && heading < 86) {
+		    		driveTrain.tankDrive(.58, -.58);
+		    	} else if (heading > 86) {
+		    		driveTrain.tankDrive(0, 0);
 				navx.reset();
 				rightEnc.reset();
 				step++;
-			}
+		    	}		
 			break;
 		case 23: // Forward ~ 100 in
 			driveTrain.tankDrive(.8, .8);
@@ -772,12 +753,17 @@ public class Robot extends IterativeRobot {
 			}
 			break;
 		case 3:	// Rotate -90
-			driveTrain.tankDrive(-1, 1);
-			if (navxY <= rightAng1) {
+			if (heading > 315 || heading < 1) {
+		    		driveTrain.tankDrive(-.8, .8);
+		    	} else if (heading < 315 && heading > 274) {
+		    		driveTrain.tankDrive(-.58, .58);
+		    	} else if (heading < 274) {
+		    		driveTrain.tankDrive(0, 0);
 				navx.reset();
 				rightEnc.reset();
 				step++;
-			}
+		    	}
+	    	}	    
 			break;
 		case 4:	// Forward ~ 10 in
 			driveTrain.tankDrive(.8, .8);
@@ -819,12 +805,16 @@ public class Robot extends IterativeRobot {
 			}
 			break;
 		case 7:	// Rotate 90
-			driveTrain.tankDrive(1, -1);
-			if (navxY >= rightAng2) {
+		    	if (heading < 45 || heading > 359) {
+		    		driveTrain.tankDrive(.8, -.8);
+		    	} else if (heading > 45 && heading < 86) {
+		    		driveTrain.tankDrive(.58, -.58);
+		    	} else if (heading > 86) {
+		    		driveTrain.tankDrive(0, 0);
 				navx.reset();
 				rightEnc.reset();
 				step++;
-			}
+		    	}		
 			break;
 		case 8:	// Forward ~ 100 in
 			driveTrain.tankDrive(.8, .8);
@@ -842,12 +832,17 @@ public class Robot extends IterativeRobot {
 			}
 			break;
 		case 9:	// Rotate -90
-			driveTrain.tankDrive(-1, 1);
-			if (navxY <= rightAng3) {
+			if (heading > 315 || heading < 1) {
+		    		driveTrain.tankDrive(-.8, .8);
+		    	} else if (heading < 315 && heading > 274) {
+		    		driveTrain.tankDrive(-.58, .58);
+		    	} else if (heading < 274) {
+		    		driveTrain.tankDrive(0, 0);
 				navx.reset();
 				rightEnc.reset();
 				step++;
-			}
+		    	}
+	    	}	    
 			break;
 		case 10: // Forward ~ 100 in
 			driveTrain.tankDrive(.8, .8);
@@ -880,12 +875,17 @@ public class Robot extends IterativeRobot {
 			}
 			break;
 		case 12: // Rotate -90
-			driveTrain.tankDrive(-1, 1);
-			if (navxY <= rightAng4) {
+			if (heading > 315 || heading < 1) {
+		    		driveTrain.tankDrive(-.8, .8);
+		    	} else if (heading < 315 && heading > 274) {
+		    		driveTrain.tankDrive(-.58, .58);
+		    	} else if (heading < 274) {
+		    		driveTrain.tankDrive(0, 0);
 				navx.reset();
 				rightEnc.reset();
 				step++;
-			}
+		    	}
+	    	}	    
 			break;
 		case 13: // Forward ~ 100 in
 			driveTrain.tankDrive(.8, .8);
@@ -928,10 +928,10 @@ public class Robot extends IterativeRobot {
 			bad90 = false;
 		
 		// Lift Positions
-			floorPos = 0;
-			switchPos = 0;
-			scaleLPos = 0;
-			scaleHPos = 0;
+			double floorPos = 0;
+			double switchPos = 0;
+			double scaleLPos = 0;
+			double scaleHPos = 0;
 			
 		// Resets
 			leftEnc.reset();
@@ -959,11 +959,9 @@ public class Robot extends IterativeRobot {
 	    	double loIntake = maniStick.getZ() * 1; // Left Intake Speed	Z - Axis
 	    	double roIntake = maniStick.getZ() * -1; // Right Intake Speed	Z - Axis
 	    	
-	    	// Gyro and NavX Controls
-	    	double gyroD = gyro.getAngle();	// Gyroscope Value
-	    	double navxY = navx.getYaw();
-	    	System.out.println(navx.getFusedHeading());	
+	    	// NavX Controls	
 	    	double heading = navx.getFusedHeading(); 
+		System.out.println(navx.getFusedHeading());
 	    	
 	    	// Intake 2.0
 	    	if (maniStick.getY() >= .5 && killIntake == false) {
