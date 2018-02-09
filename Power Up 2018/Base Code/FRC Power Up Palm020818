@@ -55,6 +55,8 @@ import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import java.util.function.BinaryOperator;
 
+import edu.wpi.first.wpilibj.Timer;
+
 public class Robot extends IterativeRobot {
 	
 	Joystick leftStick = new Joystick(0); // Left Driver Joystick
@@ -100,12 +102,79 @@ public class Robot extends IterativeRobot {
 		boolean user; // User Button in Disabled
 		boolean good90; // Turn 90 Degrees
 		boolean bad90; // Turn -90 Degrees
+		
+	// Lift Positions
+		double floorPos = 0; // Floor Position
+		double switchPos = 0; // Switch Position
+		double scaleLPos = 0; // Low Scale Position
+		double scaleHPos = 0; // High Scale Position
 	
-	// Autonomous Selection
-		DigitalInput ch1 = new DigitalInput(0); // Left Switch Score/Autoline
-		DigitalInput ch2 = new DigitalInput(1); // Middle Switch Score/Autoline
-		DigitalInput ch3 = new DigitalInput(2); // Right Switch Score/Autoline
-		DigitalInput ch4 = new DigitalInput(11); // Null
+	// Autonomous
+		// Selection
+			DigitalInput ch1 = new DigitalInput(0); // Left Switch Score/Autoline
+			DigitalInput ch2 = new DigitalInput(1); // Middle Switch Score/Autoline
+			DigitalInput ch3 = new DigitalInput(2); // Right Switch Score/Autoline
+			DigitalInput ch4 = new DigitalInput(11); // Null
+				
+		// Distances
+			 // Left Side Switch Scoring
+				double leftDis1 = 300;
+				double leftDis2 = 100;
+				double leftDis3 = -100;
+				double leftDis4 = 200;
+				double leftDis5 = 200;
+			 // Left Side Switch Driving
+				double leftDis6 = 500;
+				double leftDis7 = 200;
+			 // Middle Left Switch Scoring
+				double midlDis1 = 300;
+				double midlDis2 = 300;
+				double midlDis3 = 200;
+				double midlDis4 = 100;
+				double midlDis5 = -100;
+				double midlDis6 = 200;
+			 // Middle Right Switch Scoring
+				double midrDis1 = 300;
+				double midrDis2 = 300;
+				double midrDis3 = 200;
+				double midrDis4 = 100;
+				double midrDis5 = -100;
+				double midrDis6 = 200;
+			 // Right Side Switch Scoring
+				double rightDis1 = 300;
+				double rightDis2 = 100;
+				double rightDis3 = -100;
+				double rightDis4 = 100;
+				double rightDis5 = 100;
+			 // Right Side Switch Driving
+				double rightDis6 = 500;
+				double rightDis7 = 100;
+				
+		// Angles
+			 // Left Side Switch Scoring
+				double leftAng1 = 90;
+				double leftAng2 = -90;
+				double leftAng3 = 90;
+			 // Left Side Switch Driving
+				double leftAng4 = 90;
+			 // Middle Left Switch Scoring
+				double midlAng1 = -90;
+				double midlAng2 = 90;
+				double midlAng3 = 90;
+				double midlAng4 = -90;
+			 // Middle Right Switch Scoring
+				double midrAng1 = 90;
+				double midrAng2 = -90;
+				double midrAng3 = -90;
+				double midrAng4 = 90;
+		     // Right Side Switch Scoring
+				double rightAng1 = -90;
+				double rightAng2 = 90;
+				double rightAng3 = -90;
+			 // Right Side Switch Driving
+				double rightAng4 = -90;
+			 // Angle Offset
+				double angleOff = .5;
 
 	@Override
     public void robotInit() {
@@ -123,7 +192,6 @@ public class Robot extends IterativeRobot {
 				
 		// NavX
 			navx.reset();
-			navx.reset();
 			
 		// Encoders
 			leftEnc.reset();
@@ -140,66 +208,6 @@ public class Robot extends IterativeRobot {
     
 	@Override
     public void autonomousInit() {
-		
-		// Autonomous Distances (Encoder)	
-			 // Left Side Switch Scoring
-			 	double leftDis1 = 300; //
-			 	double leftDis2 = 100; //
-			 	double leftDis3 = -100; //
-			 	double leftDis4 = 100; //
-			 	double leftDis5 = 100; //	
-			 // Left Side Switch Driving
-			 	double leftDis6 = 500; //
-			 	double leftDis7 = 100; //
-			 // Middle Left Switch Scoring
-			 	double midlDis1 = 300; //
-			 	double midlDis2 = 300; //
-			 	double midlDis3 = 200; //
-			 	double midlDis4 = 100; //
-			 	double midlDis5 = -100; //
-			 	double midlDis6 = 200; //
-			 // Middle Right Switch Scoring
-			 	double midrDis1 = 300; //
-			 	double midrDis2 = 300; //
-				double midrDis3 = 200; //
-				double midrDis4 = 100; //
-				double midrDis5 = -100; //
-				double midrDis6 = 200; //
-			 // Right Side Switch Scoring
-				double rightDis1 = 300; //
-				double rightDis2 = 100; //
-				double rightDis3 = -100; //
-				double rightDis4 = 100; //
-				double rightDis5 = 100; //
-			 // Right Side Switch Driving
-			 	double rightDis6 = 500; //
-			 	double rightDis7 = 100; //
-			 
-		// Autonomous Turn Angles (NavX)	
-			 // Left Side Switch Scoring
-				double leftAng1 = 90; //
-				double leftAng2 = -90; //
-				double leftAng3 = 90; //
-			 // Left Side Switch Driving
-				double leftAng4 = 90; //
-			 // Middle Left Switch Scoring
-				double midlAng1 = -90; //
-				double midlAng2 = 90; //
-				double midlAng3 = 90; //
-				double midlAng4 = -90; //
-			 // Middle Right Switch	Scoring
-				double midrAng1 = 90; //
-				double midrAng2 = -90; //
-				double midrAng3 = -90; //
-				double midrAng4 = 90; //
-			 // Right Side Switch Scoring
-				double rightAng1 = -90; //
-				double rightAng2 = 90; //
-				double rightAng3 = -90; //
-			 // Right Side Switch Driving
-				double rightAng4 = -90; //
-			 //Angle Offset
-				double angleOff = .5; // Adjustment Angle For Driving With NavX
 
 		// Resets
 			leftEnc.reset();
@@ -213,8 +221,11 @@ public class Robot extends IterativeRobot {
 		
 			double encLD = leftEnc.getDistance() * -1; // Left Encoder Value
 			double encRD = rightEnc.getDistance() * 1; // Right Encoder Value
-			double heading = navx.getFusedHeading(); // NavX Angle
-		
+			double navxY = navx.getYaw(); // NavX Yaw Value
+			double heading = navx.getFusedHeading(); // NavX Heading Value
+			
+			System.out.println(encRD);
+			
 			String gameData;
     	    gameData = DriverStation.getInstance().getGameSpecificMessage();
   
@@ -234,46 +245,37 @@ public class Robot extends IterativeRobot {
 			navx.reset();
 			break;
 		case 2:	// Forward ~ 165 in
-			driveTrain.tankDrive(.8, .8);
-			if (navxY >= angleOff && rightEnc.getDistance() <= leftDis1){
-				driveTrain.tankDrive(.85, .8);
-			}
-			if (navxY <= -angleOff && rightEnc.getDistance() <= leftDis1){
-				driveTrain.tankDrive(.8, .85);
-			}
-			if (navxY <= angleOff && navxY >= -angleOff && rightEnc.getDistance() <= leftDis1){
+			if (navxY <= angleOff && navxY >= -angleOff && encRD <= leftDis1) {
 				driveTrain.tankDrive(.8, .8);
-			}
-			if (encRD >= leftDis1) {
-				rightEnc.reset();
+			} else if (navxY >= angleOff && encRD <= leftDis1) {
+				driveTrain.tankDrive(.8, .85);
+			} else if (navxY <= -angleOff && encRD <= leftDis1) {
+				driveTrain.tankDrive(.85, .8);
+			} else if (encRD >= leftDis1) {
 				navx.reset();
 				step++;
 			}
 			break;
 		case 3:	// Rotate 90
-		    	if (heading < 45 || heading > 359) {
-		    		driveTrain.tankDrive(.8, -.8);
-		    	} else if (heading > 45 && heading < 86) {
-		    		driveTrain.tankDrive(.58, -.58);
-		    	} else if (heading > 86) {
-		    		driveTrain.tankDrive(0, 0);
-				navx.reset();
-				rightEnc.reset();
-				step++;
-		    	}		
+		    if (heading < 45 || heading > 359) {
+		    	driveTrain.tankDrive(.8, -.8);
+		    } else if (heading > 45 && heading < 86) {
+		    	driveTrain.tankDrive(.58, -.58);
+		    } else if (heading > 86) {
+		    	driveTrain.tankDrive(0, 0);
+		    	navx.reset();
+		    	rightEnc.reset();
+		    	step++;
+		    } 
 			break;
 		case 4:	// Forward ~ 10 in
-			driveTrain.tankDrive(.8, .8);
-			if (navxY >= angleOff && rightEnc.getDistance() <= leftDis2){
-				driveTrain.tankDrive(.85, .8);
-			}
-			if (navxY <= -angleOff && rightEnc.getDistance() <= leftDis2){
-				driveTrain.tankDrive(.8, .85);
-			}
-			if (navxY <= angleOff && navxY >= -angleOff && rightEnc.getDistance() <= leftDis2){
+			if (navxY <= angleOff && navxY >= -angleOff && encRD <= leftDis2) {
 				driveTrain.tankDrive(.8, .8);
-			}
-			if (encRD >= leftDis2) {
+			} else if (navxY >= angleOff && encRD <= leftDis2) {
+				driveTrain.tankDrive(.8, .85);
+			} else if (navxY <= -angleOff && encRD <= leftDis2) {
+				driveTrain.tankDrive(.85, .8);
+			} else if (encRD >= leftDis2) {
 				navx.reset();
 				step++;
 			}
@@ -282,119 +284,102 @@ public class Robot extends IterativeRobot {
 			driveTrain.tankDrive(0, 0);
 			rightEnc.reset();
 			s1.set(false);
+			Timer.delay(.5);
 			step++;
 			break;
 		case 6:	// Reverse ~ 10 in
-			driveTrain.tankDrive(-.8, -.8);
-			if (navxY >= angleOff && rightEnc.getDistance() >= leftDis3){
-				driveTrain.tankDrive(-.8, -.85);
-			}
-			if (navxY <= -angleOff && rightEnc.getDistance() >= leftDis3){
-				driveTrain.tankDrive(-.85, -.8);
-			}
-			if (navxY <= angleOff && navxY >= -angleOff && rightEnc.getDistance() >= leftDis3){
+			if (navxY <= angleOff && navxY >= -angleOff && encRD >= leftDis3) {
 				driveTrain.tankDrive(-.8, -.8);
-			}
-			if (encRD <= leftDis3) {
-				s1.set(false);
+			} else if (navxY >= angleOff && encRD >= leftDis3) {
+				driveTrain.tankDrive(-.8, -.85);
+			} else if (navxY <= -angleOff && encRD >= leftDis3) {
+				driveTrain.tankDrive(-.85, -.8);
+			} else if (encRD <= leftDis3) {
 				navx.reset();
 				step++;
 			}
 			break;
 		case 7:	// Rotate -90
-		    	if (heading > 315 || heading < 1) {
-		    		driveTrain.tankDrive(-.8, .8);
-		    	} else if (heading < 315 && heading > 274) {
-		    		driveTrain.tankDrive(-.58, .58);
-		    	} else if (heading < 274) {
-		    		driveTrain.tankDrive(0, 0);
-				navx.reset();
-				rightEnc.reset();
-				step++;
-		    	}
-	    	}	    
+		    if (heading > 315 || heading < 1) {
+		    	driveTrain.tankDrive( -.8, .8);
+		    } else if (heading < 315 && heading > 274) {
+		    	driveTrain.tankDrive( -.58, .58);
+		    } else if (heading < 274) {
+		    	driveTrain.tankDrive(0, 0);
+		    	navx.reset();
+		    	rightEnc.reset();
+		    	step++;
+		    }    
 			break;
 		case 8:	// Forward ~ 100 in
-			driveTrain.tankDrive(.8, .8);
-			if (navxY >= angleOff && rightEnc.getDistance() <= leftDis4){
-				driveTrain.tankDrive(.85, .8);
-			}
-			if (navxY <= -angleOff && rightEnc.getDistance() <= leftDis4){
-				driveTrain.tankDrive(.8, .85);
-			}
-			if (navxY <= angleOff && navxY >= -angleOff && rightEnc.getDistance() <= leftDis4){
+			if (navxY <= angleOff && navxY >= -angleOff && encRD <= leftDis4) {
 				driveTrain.tankDrive(.8, .8);
-			}
-			if (encRD >= leftDis4) {
+			} else if (navxY >= angleOff && encRD <= leftDis4) {
+				driveTrain.tankDrive(.8, .85);
+			} else if (navxY <= -angleOff && encRD <= leftDis4) {
+				driveTrain.tankDrive(.85, .8);
+			} else if (encRD >= leftDis4) {
+				navx.reset();
 				step++;
 			}
 			break;
 		case 9:	// Rotate 90
-		    	if (heading < 45 || heading > 359) {
-		    		driveTrain.tankDrive(.8, -.8);
-		    	} else if (heading > 45 && heading < 86) {
-		    		driveTrain.tankDrive(.58, -.58);
-		    	} else if (heading > 86) {
-		    		driveTrain.tankDrive(0, 0);
-				navx.reset();
-				rightEnc.reset();
-				step++;
-		    	}		
+	    	if (heading < 45 || heading > 359) {
+	    		driveTrain.tankDrive(.8, -.8);
+	    	} else if (heading > 45 && heading < 86) {
+	    		driveTrain.tankDrive( .58, -.58);
+	    	} else if (heading > 86) {
+	    		driveTrain.tankDrive(0, 0);
+	    		navx.reset();
+	    		rightEnc.reset();
+	    		step++;
+	    	} 
 			break;
 		case 10: // Forward ~ 100 in
-			driveTrain.tankDrive(.8, .8);
-			if (navxY >= angleOff && rightEnc.getDistance() <= leftDis5){
-				driveTrain.tankDrive(.85, .8);
-			}
-			if (navxY <= -angleOff && rightEnc.getDistance() <= leftDis5){
-				driveTrain.tankDrive(.8, .85);
-			}
-			if (navxY <= angleOff && navxY >= -angleOff && rightEnc.getDistance() <= leftDis5){
+			if (navxY <= angleOff && navxY >= -angleOff && encRD <= leftDis5) {
 				driveTrain.tankDrive(.8, .8);
-			}
-			if (encRD >= leftDis5) {
-				step = 14;
+			} else if (navxY >= angleOff && encRD <= leftDis5) {
+				driveTrain.tankDrive(.8, .85);
+			} else if (navxY <= -angleOff && encRD <= leftDis5) {
+				driveTrain.tankDrive(.85, .8);
+			} else if (encRD >= leftDis5) {
+				navx.reset();
+				step++;
 			}
 			break;
 		case 11: // Forward ~ 250 in
-			driveTrain.tankDrive(.8, .8);
-			if (navxY >= angleOff && rightEnc.getDistance() <= leftDis6){
-				driveTrain.tankDrive(.85, .8);
-			}
-			if (navxY <= -angleOff && rightEnc.getDistance() <= leftDis6){
-				driveTrain.tankDrive(.8, .85);
-			}
-			if (navxY <= angleOff && navxY >= -angleOff && rightEnc.getDistance() <= leftDis6){
+			if (navxY <= angleOff && navxY >= -angleOff && encRD <= leftDis6) {
 				driveTrain.tankDrive(.8, .8);
-			}
-			if (encRD >= leftDis6) {
+			} else if (navxY >= angleOff && encRD <= leftDis6) {
+				driveTrain.tankDrive(.8, .85);
+			} else if (navxY <= -angleOff && encRD <= leftDis6) {
+				driveTrain.tankDrive(.85, .8);
+			} else if (encRD >= leftDis6) {
+				navx.reset();
 				step++;
 			}
 			break;
 		case 12: // Rotate 90
-		    	if (heading < 45 || heading > 359) {
-		    		driveTrain.tankDrive(.8, -.8);
-		    	} else if (heading > 45 && heading < 86) {
-		    		driveTrain.tankDrive(.58, -.58);
-		    	} else if (heading > 86) {
-		    		driveTrain.tankDrive(0, 0);
-				navx.reset();
-				rightEnc.reset();
-				step++;
-		    	}		
+			if (heading < 45 || heading > 359) {
+	    		driveTrain.tankDrive(.8, -.8);
+	    	} else if (heading > 45 && heading < 86) {
+	    		driveTrain.tankDrive( .58, -.58);
+	    	} else if (heading > 86) {
+	    		driveTrain.tankDrive(0, 0);
+	    		navx.reset();
+	    		rightEnc.reset();
+	    		step++;
+	    	} 
 			break;
 		case 13: // Forward ~ 100 in
-			driveTrain.tankDrive(.8, .8);
-			if (navxY >= angleOff && rightEnc.getDistance() <= leftDis7){
-				driveTrain.tankDrive(.85, .8);
-			}
-			if (navxY <= -angleOff && rightEnc.getDistance() <= leftDis7){
-				driveTrain.tankDrive(.8, .85);
-			}
-			if(navxY <= angleOff && navxY >= -angleOff && rightEnc.getDistance() <= leftDis7){
+			if (navxY <= angleOff && navxY >= -angleOff && encRD <= leftDis7) {
 				driveTrain.tankDrive(.8, .8);
-			}
-			if (encRD >= leftDis7) {
+			} else if (navxY >= angleOff && encRD <= leftDis7) {
+				driveTrain.tankDrive(.8, .85);
+			} else if (navxY <= -angleOff && encRD <= leftDis7) {
+				driveTrain.tankDrive(.85, .8);
+			} else if (encRD >= leftDis7) {
+				navx.reset();
 				step++;
 			}
 			break;
@@ -418,103 +403,86 @@ public class Robot extends IterativeRobot {
 			navx.reset();
 			break;
 		case 2:	// Forward ~ 90 in
-			driveTrain.tankDrive(.8, .8);
-			if (navxY >= angleOff && rightEnc.getDistance() <= midlDis1){
-				driveTrain.tankDrive(.85, .8);
-			}
-			if (navxY <= -angleOff && rightEnc.getDistance() <= midlDis1){
-				driveTrain.tankDrive(.8, .85);
-			}
-			if (navxY <= angleOff && navxY >= -angleOff && rightEnc.getDistance() <= midlDis1){
+			if (navxY <= angleOff && navxY >= -angleOff && encRD <= midlDis1) {
 				driveTrain.tankDrive(.8, .8);
-			}
-			if (encRD >= midlDis1) {
+			} else if (navxY >= angleOff && encRD <= midlDis1) {
+				driveTrain.tankDrive(.8, .85);
+			} else if (navxY <= -angleOff && encRD <= midlDis1) {
+				driveTrain.tankDrive(.85, .8);
+			} else if (encRD >= midlDis1) {
 				navx.reset();
 				step++;
 			}
 			break;
 		case 3:	// Rotate -90
-			if (heading > 315 || heading < 1) {
-		    		driveTrain.tankDrive(-.8, .8);
-		    	} else if (heading < 315 && heading > 274) {
-		    		driveTrain.tankDrive(-.58, .58);
-		    	} else if (heading < 274) {
-		    		driveTrain.tankDrive(0, 0);
-				navx.reset();
-				rightEnc.reset();
-				step++;
-		    	}
-	    	}	    
-			break;
+		    if (heading > 315 || heading < 1) {
+		    	driveTrain.tankDrive( -.8, .8);
+		    } else if (heading < 315 && heading > 274) {
+		    	driveTrain.tankDrive( -.58, .58);
+		    } else if (heading < 274) {
+		    	driveTrain.tankDrive(0, 0);
+		    	navx.reset();
+		    	rightEnc.reset();
+		    	step++;
+		    } 
+		    break;
 		case 4:	// Forward ~ 130 in
-			driveTrain.tankDrive(.8, .8);
-			if (navxY >= angleOff && rightEnc.getDistance() <= midlDis2){
-				driveTrain.tankDrive(.85, .8);
-			}
-			if (navxY <= -angleOff && rightEnc.getDistance() <= midlDis2){
-				driveTrain.tankDrive(.8, .85);
-			}
-			if (navxY <= angleOff && navxY >= -angleOff && rightEnc.getDistance() <= midlDis2){
+			if (navxY <= angleOff && navxY >= -angleOff && encRD <= midlDis2) {
 				driveTrain.tankDrive(.8, .8);
-			}
-			if (encRD >= midlDis2) {
+			} else if (navxY >= angleOff && encRD <= midlDis2) {
+				driveTrain.tankDrive(.8, .85);
+			} else if (navxY <= -angleOff && encRD <= midlDis2) {
+				driveTrain.tankDrive(.85, .8);
+			} else if (encRD >= midlDis2) {
 				navx.reset();
 				step++;
 			}
 			break;
 		case 5:	// Rotate 90
-		    	if (heading < 45 || heading > 359) {
-		    		driveTrain.tankDrive(.8, -.8);
-		    	} else if (heading > 45 && heading < 86) {
-		    		driveTrain.tankDrive(.58, -.58);
-		    	} else if (heading > 86) {
-		    		driveTrain.tankDrive(0, 0);
-				navx.reset();
-				rightEnc.reset();
-				step++;
-		    	}		
+			if (heading < 45 || heading > 359) {
+	    		driveTrain.tankDrive(.8, -.8);
+	    	} else if (heading > 45 && heading < 86) {
+	    		driveTrain.tankDrive( .58, -.58);
+	    	} else if (heading > 86) {
+	    		driveTrain.tankDrive(0, 0);
+	    		navx.reset();
+	    		rightEnc.reset();
+	    		step++;
+	    	} 
 			break;
 		case 6:	// Forward ~ 75 in
-			driveTrain.tankDrive(.8, .8);
-			if (navxY >= angleOff && rightEnc.getDistance() >= midlDis3){
-				driveTrain.tankDrive(-.8, -.85);
-			}
-			if (navxY <= -angleOff && rightEnc.getDistance() >= midlDis3){
-				driveTrain.tankDrive(-.85, -.8);
-			}
-			if (navxY <= angleOff && navxY >= -angleOff && rightEnc.getDistance() >= midlDis3){
-				driveTrain.tankDrive(-.8, -.8);
-			}
-			if (encRD >= midlDis3) {
-				s1.set(false);
+			if (navxY <= angleOff && navxY >= -angleOff && encRD <= midlDis3) {
+				driveTrain.tankDrive(.8, .8);
+			} else if (navxY >= angleOff && encRD <= midlDis3) {
+				driveTrain.tankDrive(.8, .85);
+			} else if (navxY <= -angleOff && encRD <= midlDis3) {
+				driveTrain.tankDrive(.85, .8);
+			} else if (encRD >= midlDis3) {
 				navx.reset();
 				step++;
 			}
 			break;
 		case 7:	// Rotate 90
 			if (heading < 45 || heading > 359) {
-		    		driveTrain.tankDrive(.8, -.8);
-		    	} else if (heading > 45 && heading < 86) {
-		    		driveTrain.tankDrive(.58, -.58);
-		    	} else if (heading > 86) {
-		    		driveTrain.tankDrive(0, 0);
-				navx.reset();
-				rightEnc.reset();
-				step++;
-		    	}		
+	    		driveTrain.tankDrive(.8, -.8);
+	    	} else if (heading > 45 && heading < 86) {
+	    		driveTrain.tankDrive( .58, -.58);
+	    	} else if (heading > 86) {
+	    		driveTrain.tankDrive(0, 0);
+	    		navx.reset();
+	    		rightEnc.reset();
+	    		step++;
+	    	} 
 			break;
 		case 8:	// Forward ~ 10 in
-			driveTrain.tankDrive(.8, .8);
-			if (navxY >= angleOff && rightEnc.getDistance() <= midlDis4){
-				driveTrain.tankDrive(.85, .8);
-			}
-			if (navxY <= -angleOff && rightEnc.getDistance() <= midlDis4){
-				driveTrain.tankDrive(.8, .85);
-			}
-			if (navxY <= angleOff && navxY >= -angleOff && rightEnc.getDistance() <= midlDis4){
+			if (navxY <= angleOff && navxY >= -angleOff && encRD <= midlDis4) {
 				driveTrain.tankDrive(.8, .8);
-			}
-			if (encRD >= midlDis4) {
+			} else if (navxY >= angleOff && encRD <= midlDis4) {
+				driveTrain.tankDrive(.8, .85);
+			} else if (navxY <= -angleOff && encRD <= midlDis4) {
+				driveTrain.tankDrive(.85, .8);
+			} else if (encRD >= midlDis4) {
+				navx.reset();
 				step++;
 			}
 			break;
@@ -525,147 +493,122 @@ public class Robot extends IterativeRobot {
 			step++;
 			break;
 		case 10: // Reverse ~ 10 in
-			driveTrain.tankDrive(-.8, -.8);
-			if (navxY >= angleOff && rightEnc.getDistance() <= midlDis5){
-				driveTrain.tankDrive(.85, .8);
-			}
-			if (navxY <= -angleOff && rightEnc.getDistance() <= midlDis5){
-				driveTrain.tankDrive(.8, .85);
-			}
-			if (navxY <= angleOff && navxY >= -angleOff && rightEnc.getDistance() <= midlDis5){
-				driveTrain.tankDrive(.8, .8);
-			}
-			if (encRD <= midlDis5) {
-				driveTrain.tankDrive(0, 0);
+			if (navxY <= angleOff && navxY >= -angleOff && encRD >= midlDis5) {
+				driveTrain.tankDrive(-.8, -.8);
+			} else if (navxY >= angleOff && encRD >= midlDis5) {
+				driveTrain.tankDrive(-.8, -.85);
+			} else if (navxY <= -angleOff && encRD >= midlDis5) {
+				driveTrain.tankDrive(-.85, -.8);
+			} else if (encRD <= midlDis5) {
+				navx.reset();
+				step++;
 			}
 			break;
 		case 11: // Rotate -90
-			if (heading > 315 || heading < 1) {
-		    		driveTrain.tankDrive(-.8, .8);
-		    	} else if (heading < 315 && heading > 274) {
-		    		driveTrain.tankDrive(-.58, .58);
-		    	} else if (heading < 274) {
-		    		driveTrain.tankDrive(0, 0);
-				navx.reset();
-				rightEnc.reset();
-				step++;
-		    	}
-	    	}	    
+		    if (heading > 315 || heading < 1) {
+		    	driveTrain.tankDrive( -.8, .8);
+		    } else if (heading < 315 && heading > 274) {
+		    	driveTrain.tankDrive( -.58, .58);
+		    } else if (heading < 274) {
+		    	driveTrain.tankDrive(0, 0);
+		    	navx.reset();
+		    	rightEnc.reset();
+		    	step++;
+		    } 
 			break;
 		case 12: // Forward ~ 100 in
-			driveTrain.tankDrive(.8, .8);
-			if (navxY >= angleOff && rightEnc.getDistance() <= midlDis6){
-				driveTrain.tankDrive(.85, .8);
-			}
-			if (navxY <= -angleOff && rightEnc.getDistance() <= midlDis6){
-				driveTrain.tankDrive(.8, .85);
-			}
-			if (navxY <= angleOff && navxY >= -angleOff && rightEnc.getDistance() <= midlDis6){
+			if (navxY <= angleOff && navxY >= -angleOff && encRD <= midlDis6) {
 				driveTrain.tankDrive(.8, .8);
-			}
-			if (encRD >= midlDis6) {
-				step = 24;
+			} else if (navxY >= angleOff && encRD <= midlDis6) {
+				driveTrain.tankDrive(.8, .85);
+			} else if (navxY <= -angleOff && encRD <= midlDis6) {
+				driveTrain.tankDrive(.85, .8);
+			} else if (encRD >= midlDis6) {
+				navx.reset();
+				step++;
 			}
 			break;
 		case 13: // Forward ~ 90 in
-			driveTrain.tankDrive(.8, .8);
-			if (navxY >= angleOff && rightEnc.getDistance() <= midrDis1){
-				driveTrain.tankDrive(.85, .8);
-			}
-			if (navxY <= -angleOff && rightEnc.getDistance() <= midrDis1){
-				driveTrain.tankDrive(.8, .85);
-			}
-			if (navxY <= angleOff && navxY >= -angleOff && rightEnc.getDistance() <= midrDis1){
+			if (navxY <= angleOff && navxY >= -angleOff && encRD <= midrDis1) {
 				driveTrain.tankDrive(.8, .8);
-			}
-			if (encRD >= midrDis1) {
+			} else if (navxY >= angleOff && encRD <= midrDis1) {
+				driveTrain.tankDrive(.8, .85);
+			} else if (navxY <= -angleOff && encRD <= midrDis1) {
+				driveTrain.tankDrive(.85, .8);
+			} else if (encRD >= midrDis1) {
 				navx.reset();
 				step++;
 			}
 			break;
 		case 14: // Rotate 90
-		    	if (heading < 45 || heading > 359) {
-		    		driveTrain.tankDrive(.8, -.8);
-		    	} else if (heading > 45 && heading < 86) {
-		    		driveTrain.tankDrive(.58, -.58);
-		    	} else if (heading > 86) {
-		    		driveTrain.tankDrive(0, 0);
-				navx.reset();
-				rightEnc.reset();
-				step++;
-		    	}		
+			if (heading < 45 || heading > 359) {
+	    		driveTrain.tankDrive(.8, -.8);
+	    	} else if (heading > 45 && heading < 86) {
+	    		driveTrain.tankDrive( .58, -.58);
+	    	} else if (heading > 86) {
+	    		driveTrain.tankDrive(0, 0);
+	    		navx.reset();
+	    		rightEnc.reset();
+	    		step++;
+	    	} 
 			break;
 		case 15: // Forward ~ 130 in
-			driveTrain.tankDrive(.8, .8);
-			if (navxY >= angleOff && rightEnc.getDistance() <= midrDis2){
-				driveTrain.tankDrive(.85, .8);
-			}
-			if (navxY <= -angleOff && rightEnc.getDistance() <= midrDis2){
-				driveTrain.tankDrive(.8, .85);
-			}
-			if (navxY <= angleOff && navxY >= -angleOff && rightEnc.getDistance() <= midrDis2){
+			if (navxY <= angleOff && navxY >= -angleOff && encRD <= midrDis2) {
 				driveTrain.tankDrive(.8, .8);
-			}
-			if (encRD >= midrDis2) {
+			} else if (navxY >= angleOff && encRD <= midrDis2) {
+				driveTrain.tankDrive(.8, .85);
+			} else if (navxY <= -angleOff && encRD <= midrDis2) {
+				driveTrain.tankDrive(.85, .8);
+			} else if (encRD >= midrDis2) {
 				navx.reset();
 				step++;
 			}
 			break;
 		case 16: // Rotate -90
-			if (heading > 315 || heading < 1) {
-					driveTrain.tankDrive(-.8, .8);
-				} else if (heading < 315 && heading > 274) {
-					driveTrain.tankDrive(-.58, .58);
-				} else if (heading < 274) {
-					driveTrain.tankDrive(0, 0);
-					navx.reset();
-					rightEnc.reset();
-					step++;
-				}
-			}	    
-				break;
+		    if (heading > 315 || heading < 1) {
+		    	driveTrain.tankDrive( -.8, .8);
+		    } else if (heading < 315 && heading > 274) {
+		    	driveTrain.tankDrive( -.58, .58);
+		    } else if (heading < 274) {
+		    	driveTrain.tankDrive(0, 0);
+		    	navx.reset();
+		    	rightEnc.reset();
+		    	step++;
+		    } 
+			break;
 		case 17: // Forward ~ 75 in
-			driveTrain.tankDrive(.8, .8);
-			if (navxY >= angleOff && rightEnc.getDistance() >= midrDis3){
-				driveTrain.tankDrive(-.8, -.85);
-			}
-			if (navxY <= -angleOff && rightEnc.getDistance() >= midrDis3){
-				driveTrain.tankDrive(-.85, -.8);
-			}
-			if (navxY <= angleOff && navxY >= -angleOff && rightEnc.getDistance() >= midrDis3){
-				driveTrain.tankDrive(-.8, -.8);
-			}
-			if (encRD >= midrDis3) {
-				s1.set(false);
+			if (navxY <= angleOff && navxY >= -angleOff && encRD <= midrDis3) {
+				driveTrain.tankDrive(.8, .8);
+			} else if (navxY >= angleOff && encRD <= midrDis3) {
+				driveTrain.tankDrive(.8, .85);
+			} else if (navxY <= -angleOff && encRD <= midrDis3) {
+				driveTrain.tankDrive(.85, .8);
+			} else if (encRD >= midrDis3) {
 				navx.reset();
 				step++;
 			}
 			break;
 		case 18: // Rotate -90
-			if (heading > 315 || heading < 1) {
-		    		driveTrain.tankDrive(-.8, .8);
-		    	} else if (heading < 315 && heading > 274) {
-		    		driveTrain.tankDrive(-.58, .58);
-		    	} else if (heading < 274) {
-		    		driveTrain.tankDrive(0, 0);
-				navx.reset();
-				rightEnc.reset();
-				step++;
-		    	}
-	    	}	    
+		    if (heading > 315 || heading < 1) {
+		    	driveTrain.tankDrive( -.8, .8);
+		    } else if (heading < 315 && heading > 274) {
+		    	driveTrain.tankDrive( -.58, .58);
+		    } else if (heading < 274) {
+		    	driveTrain.tankDrive(0, 0);
+		    	navx.reset();
+		    	rightEnc.reset();
+		    	step++;
+		    } 
 			break;
 		case 19: // Forward ~ 10 in
-			driveTrain.tankDrive(.8, .8);
-			if (navxY >= angleOff && rightEnc.getDistance() <= midrDis4){
-				driveTrain.tankDrive(.85, .8);
-			}
-			if (navxY <= -angleOff && rightEnc.getDistance() <= midrDis4){
-				driveTrain.tankDrive(.8, .85);
-			}
-			if (navxY <= angleOff && navxY >= -angleOff && rightEnc.getDistance() <= midrDis4){
+			if (navxY <= angleOff && navxY >= -angleOff && encRD <= midrDis4) {
 				driveTrain.tankDrive(.8, .8);
-			}
-			if (encRD >= midrDis4) {
+			} else if (navxY >= angleOff && encRD <= midrDis4) {
+				driveTrain.tankDrive(.8, .85);
+			} else if (navxY <= -angleOff && encRD <= midrDis4) {
+				driveTrain.tankDrive(.85, .8);
+			} else if (encRD >= midrDis4) {
+				navx.reset();
 				step++;
 			}
 			break;
@@ -676,44 +619,38 @@ public class Robot extends IterativeRobot {
 			step++;
 			break;
 		case 21: // Reverse ~ 10 in
-			driveTrain.tankDrive(-.8, -.8);
-			if (navxY >= angleOff && rightEnc.getDistance() <= midrDis5){
-				driveTrain.tankDrive(.85, .8);
-			}
-			if (navxY <= -angleOff && rightEnc.getDistance() <= midrDis5){
-				driveTrain.tankDrive(.8, .85);
-			}
-			if (navxY <= angleOff && navxY >= -angleOff && rightEnc.getDistance() <= midrDis5){
-				driveTrain.tankDrive(.8, .8);
-			}
-			if (encRD <= midrDis5) {
-				driveTrain.tankDrive(0, 0);
+			if (navxY <= angleOff && navxY >= -angleOff && encRD >= midrDis5) {
+				driveTrain.tankDrive(-.8, -.8);
+			} else if (navxY >= angleOff && encRD >= midrDis5) {
+				driveTrain.tankDrive(-.8, -.85);
+			} else if (navxY <= -angleOff && encRD >= midrDis5) {
+				driveTrain.tankDrive(-.85, -.8);
+			} else if (encRD <= midrDis5) {
+				navx.reset();
+				step++;
 			}
 			break;
 		case 22: // Rotate 90
-		    	if (heading < 45 || heading > 359) {
-		    		driveTrain.tankDrive(.8, -.8);
-		    	} else if (heading > 45 && heading < 86) {
-		    		driveTrain.tankDrive(.58, -.58);
-		    	} else if (heading > 86) {
-		    		driveTrain.tankDrive(0, 0);
-				navx.reset();
-				rightEnc.reset();
-				step++;
-		    	}		
+			if (heading < 45 || heading > 359) {
+	    		driveTrain.tankDrive(.8, -.8);
+	    	} else if (heading > 45 && heading < 86) {
+	    		driveTrain.tankDrive( .58, -.58);
+	    	} else if (heading > 86) {
+	    		driveTrain.tankDrive(0, 0);
+	    		navx.reset();
+	    		rightEnc.reset();
+	    		step++;
+	    	} 
 			break;
 		case 23: // Forward ~ 100 in
-			driveTrain.tankDrive(.8, .8);
-			if (navxY >= angleOff && rightEnc.getDistance() <= midrDis6){
-				driveTrain.tankDrive(.85, .8);
-			}
-			if (navxY <= -angleOff && rightEnc.getDistance() <= midrDis6){
-				driveTrain.tankDrive(.8, .85);
-			}
-			if (navxY <= angleOff && navxY >= -angleOff && rightEnc.getDistance() <= midrDis6){
+			if (navxY <= angleOff && navxY >= -angleOff && encRD <= midrDis6) {
 				driveTrain.tankDrive(.8, .8);
-			}
-			if (encRD >= midrDis6) {
+			} else if (navxY >= angleOff && encRD <= midrDis6) {
+				driveTrain.tankDrive(.8, .85);
+			} else if (navxY <= -angleOff && encRD <= midrDis6) {
+				driveTrain.tankDrive(.85, .8);
+			} else if (encRD >= midrDis6) {
+				navx.reset();
 				step++;
 			}
 			break;
@@ -737,46 +674,37 @@ public class Robot extends IterativeRobot {
 			navx.reset();
 			break;
 		case 2:	// Forward ~ 165 in
-			driveTrain.tankDrive(.8, .8);
-			if (navxY >= angleOff && rightEnc.getDistance() <= rightDis1){
-				driveTrain.tankDrive(.85, .8);
-			}
-			if (navxY <= -angleOff && rightEnc.getDistance() <= rightDis1){
-				driveTrain.tankDrive(.8, .85);
-			}
-			if (navxY <= angleOff && navxY >= -angleOff && rightEnc.getDistance() <= rightDis1){
+			if (navxY <= angleOff && navxY >= -angleOff && encRD <= rightDis1) {
 				driveTrain.tankDrive(.8, .8);
-			}
-			if (encRD >= rightDis1) {
+			} else if (navxY >= angleOff && encRD <= rightDis1) {
+				driveTrain.tankDrive(.8, .85);
+			} else if (navxY <= -angleOff && encRD <= rightDis1) {
+				driveTrain.tankDrive(.85, .8);
+			} else if (encRD >= rightDis1) {
 				navx.reset();
 				step++;
 			}
 			break;
 		case 3:	// Rotate -90
-			if (heading > 315 || heading < 1) {
-		    		driveTrain.tankDrive(-.8, .8);
-		    	} else if (heading < 315 && heading > 274) {
-		    		driveTrain.tankDrive(-.58, .58);
-		    	} else if (heading < 274) {
-		    		driveTrain.tankDrive(0, 0);
-				navx.reset();
-				rightEnc.reset();
-				step++;
-		    	}
-	    	}	    
+		    if (heading > 315 || heading < 1) {
+		    	driveTrain.tankDrive( -.8, .8);
+		    } else if (heading < 315 && heading > 274) {
+		    	driveTrain.tankDrive( -.58, .58);
+		    } else if (heading < 274) {
+		    	driveTrain.tankDrive(0, 0);
+		    	navx.reset();
+		    	rightEnc.reset();
+		    	step++;
+		    } 
 			break;
 		case 4:	// Forward ~ 10 in
-			driveTrain.tankDrive(.8, .8);
-			if (navxY >= angleOff && rightEnc.getDistance() <= rightDis2){
-				driveTrain.tankDrive(.85, .8);
-			}
-			if (navxY <= -angleOff && rightEnc.getDistance() <= rightDis2){
-				driveTrain.tankDrive(.8, .85);
-			}
-			if (navxY <= angleOff && navxY >= -angleOff && rightEnc.getDistance() <= rightDis2){
+			if (navxY <= angleOff && navxY >= -angleOff && encRD <= rightDis2) {
 				driveTrain.tankDrive(.8, .8);
-			}
-			if (encRD >= rightDis2) {
+			} else if (navxY >= angleOff && encRD <= rightDis2) {
+				driveTrain.tankDrive(.8, .85);
+			} else if (navxY <= -angleOff && encRD <= rightDis2) {
+				driveTrain.tankDrive(.85, .8);
+			} else if (encRD >= rightDis2) {
 				navx.reset();
 				step++;
 			}
@@ -788,117 +716,98 @@ public class Robot extends IterativeRobot {
 			step++;
 			break;
 		case 6:	// Reverse ~ 10 in
-			driveTrain.tankDrive(-.8, -.8);
-			if (navxY >= angleOff && rightEnc.getDistance() >= rightDis3){
-				driveTrain.tankDrive(-.8, -.85);
-			}
-			if (navxY <= -angleOff && rightEnc.getDistance() >= rightDis3){
-				driveTrain.tankDrive(-.85, -.8);
-			}
-			if (navxY <= angleOff && navxY >= -angleOff && rightEnc.getDistance() >= rightDis3){
+			if (navxY <= angleOff && navxY >= -angleOff && encRD >= rightDis3) {
 				driveTrain.tankDrive(-.8, -.8);
-			}
-			if (encRD <= rightDis3) {
-				s1.set(false);
+			} else if (navxY >= angleOff && encRD >= rightDis3) {
+				driveTrain.tankDrive(-.8, -.85);
+			} else if (navxY <= -angleOff && encRD >= rightDis3) {
+				driveTrain.tankDrive(-.85, -.8);
+			} else if (encRD <= rightDis3) {
 				navx.reset();
 				step++;
 			}
 			break;
 		case 7:	// Rotate 90
-		    	if (heading < 45 || heading > 359) {
-		    		driveTrain.tankDrive(.8, -.8);
-		    	} else if (heading > 45 && heading < 86) {
-		    		driveTrain.tankDrive(.58, -.58);
-		    	} else if (heading > 86) {
-		    		driveTrain.tankDrive(0, 0);
-				navx.reset();
-				rightEnc.reset();
-				step++;
-		    	}		
+			if (heading < 45 || heading > 359) {
+	    		driveTrain.tankDrive(.8, -.8);
+	    	} else if (heading > 45 && heading < 86) {
+	    		driveTrain.tankDrive( .58, -.58);
+	    	} else if (heading > 86) {
+	    		driveTrain.tankDrive(0, 0);
+	    		navx.reset();
+	    		rightEnc.reset();
+	    		step++;
+	    	} 
 			break;
 		case 8:	// Forward ~ 100 in
-			driveTrain.tankDrive(.8, .8);
-			if (navxY >= angleOff && rightEnc.getDistance() <= rightDis4){
-				driveTrain.tankDrive(.85, .8);
-			}
-			if (navxY <= -angleOff && rightEnc.getDistance() <= rightDis4){
-				driveTrain.tankDrive(.8, .85);
-			}
-			if (navxY <= angleOff && navxY >= -angleOff && rightEnc.getDistance() <= rightDis4){
+			if (navxY <= angleOff && navxY >= -angleOff && encRD <= rightDis4) {
 				driveTrain.tankDrive(.8, .8);
-			}
-			if (encRD >= rightDis4) {
+			} else if (navxY >= angleOff && encRD <= rightDis4) {
+				driveTrain.tankDrive(.8, .85);
+			} else if (navxY <= -angleOff && encRD <= rightDis4) {
+				driveTrain.tankDrive(.85, .8);
+			} else if (encRD >= rightDis4) {
+				navx.reset();
 				step++;
 			}
 			break;
 		case 9:	// Rotate -90
-			if (heading > 315 || heading < 1) {
-		    		driveTrain.tankDrive(-.8, .8);
-		    	} else if (heading < 315 && heading > 274) {
-		    		driveTrain.tankDrive(-.58, .58);
-		    	} else if (heading < 274) {
-		    		driveTrain.tankDrive(0, 0);
-				navx.reset();
-				rightEnc.reset();
-				step++;
-		    	}
-	    	}	    
+		    if (heading > 315 || heading < 1) {
+		    	driveTrain.tankDrive( -.8, .8);
+		    } else if (heading < 315 && heading > 274) {
+		    	driveTrain.tankDrive( -.58, .58);
+		    } else if (heading < 274) {
+		    	driveTrain.tankDrive(0, 0);
+		    	navx.reset();
+		    	rightEnc.reset();
+		    	step++;
+		    } 
 			break;
 		case 10: // Forward ~ 100 in
-			driveTrain.tankDrive(.8, .8);
-			if (navxY >= angleOff && rightEnc.getDistance() <= rightDis5){
-				driveTrain.tankDrive(.85, .8);
-			}
-			if (navxY <= -angleOff && rightEnc.getDistance() <= rightDis5){
-				driveTrain.tankDrive(.8, .85);
-			}
-			if (navxY <= angleOff && navxY >= -angleOff && rightEnc.getDistance() <= rightDis5){
+			if (navxY <= angleOff && navxY >= -angleOff && encRD <= rightDis5) {
 				driveTrain.tankDrive(.8, .8);
-			}
-			if (encRD >= rightDis5) {
-				step = 14;
+			} else if (navxY >= angleOff && encRD <= rightDis5) {
+				driveTrain.tankDrive(.8, .85);
+			} else if (navxY <= -angleOff && encRD <= rightDis5) {
+				driveTrain.tankDrive(.85, .8);
+			} else if (encRD >= rightDis5) {
+				navx.reset();
+				step++;
 			}
 			break;
 		case 11: // Forward ~ 250 in
-			driveTrain.tankDrive(.8, .8);
-			if (navxY >= angleOff && rightEnc.getDistance() <= rightDis6){
-				driveTrain.tankDrive(.85, .8);
-			}
-			if (navxY <= -angleOff && rightEnc.getDistance() <= rightDis6){
-				driveTrain.tankDrive(.8, .85);
-			}
-			if (navxY <= angleOff && navxY >= -angleOff && rightEnc.getDistance() <= rightDis6){
+			if (navxY <= angleOff && navxY >= -angleOff && encRD <= rightDis6) {
 				driveTrain.tankDrive(.8, .8);
-			}
-			if (encRD >= rightDis6) {
+			} else if (navxY >= angleOff && encRD <= rightDis6) {
+				driveTrain.tankDrive(.8, .85);
+			} else if (navxY <= -angleOff && encRD <= rightDis6) {
+				driveTrain.tankDrive(.85, .8);
+			} else if (encRD >= rightDis6) {
+				navx.reset();
 				step++;
 			}
 			break;
 		case 12: // Rotate -90
-			if (heading > 315 || heading < 1) {
-		    		driveTrain.tankDrive(-.8, .8);
-		    	} else if (heading < 315 && heading > 274) {
-		    		driveTrain.tankDrive(-.58, .58);
-		    	} else if (heading < 274) {
-		    		driveTrain.tankDrive(0, 0);
-				navx.reset();
-				rightEnc.reset();
-				step++;
-		    	}
-	    	}	    
+		    if (heading > 315 || heading < 1) {
+		    	driveTrain.tankDrive( -.8, .8);
+		    } else if (heading < 315 && heading > 274) {
+		    	driveTrain.tankDrive( -.58, .58);
+		    } else if (heading < 274) {
+		    	driveTrain.tankDrive(0, 0);
+		    	navx.reset();
+		    	rightEnc.reset();
+		    	step++;
+		    } 
 			break;
 		case 13: // Forward ~ 100 in
-			driveTrain.tankDrive(.8, .8);
-			if (navxY >= angleOff && rightEnc.getDistance() <= rightDis7){
-				driveTrain.tankDrive(.85, .8);
-			}
-			if (navxY <= -angleOff && rightEnc.getDistance() <= rightDis7){
-				driveTrain.tankDrive(.8, .85);
-			}
-			if (navxY <= angleOff && navxY >= -angleOff && rightEnc.getDistance() <= rightDis7){
+			if (navxY <= angleOff && navxY >= -angleOff && encRD <= rightDis7) {
 				driveTrain.tankDrive(.8, .8);
-			}
-			if (encRD >= rightDis7) {
+			} else if (navxY >= angleOff && encRD <= rightDis7) {
+				driveTrain.tankDrive(.8, .85);
+			} else if (navxY <= -angleOff && encRD <= rightDis7) {
+				driveTrain.tankDrive(.85, .8);
+			} else if (encRD >= rightDis7) {
+				navx.reset();
 				step++;
 			}
 			break;
@@ -926,12 +835,6 @@ public class Robot extends IterativeRobot {
 			// Testing
 			good90 = false;
 			bad90 = false;
-		
-		// Lift Positions
-			double floorPos = 0;
-			double switchPos = 0;
-			double scaleLPos = 0;
-			double scaleHPos = 0;
 			
 		// Resets
 			leftEnc.reset();
@@ -959,9 +862,10 @@ public class Robot extends IterativeRobot {
 	    	double loIntake = maniStick.getZ() * 1; // Left Intake Speed	Z - Axis
 	    	double roIntake = maniStick.getZ() * -1; // Right Intake Speed	Z - Axis
 	    	
-	    	// NavX Controls	
+	    	// NavX Controls
+	    	double navxY = navx.getYaw();
 	    	double heading = navx.getFusedHeading(); 
-		System.out.println(navx.getFusedHeading());
+	       	System.out.println(navx.getFusedHeading());	
 	    	
 	    	// Intake 2.0
 	    	if (maniStick.getY() >= .5 && killIntake == false) {
@@ -1112,18 +1016,14 @@ public class Robot extends IterativeRobot {
 	    	
 	    	if (good90 == true) {
 		    	if (heading < 45 || heading > 359) {
-		    		turnSpeed = .8;
+		    		driveTrain.tankDrive(.8, -.8);
 		    	} else if (heading > 45 && heading < 86) {
-		    		turnSpeed = .58;
+		    		driveTrain.tankDrive( .58, -.58);
 		    	} else if (heading > 86) {
-		    		turnSpeed = 0;
+		    		driveTrain.tankDrive(0, 0);
 		    		good90 = false;
 		    	}	
-	    	}
-	    				
-	    	if (good90 == true) {
-	    		driveTrain.tankDrive(turnSpeed, -1 * turnSpeed);
-	    	}	    
+	    	}  
 	    				
 	    	// Left (-90)
 	    	if (rightStick.getRawButton(2)) {
@@ -1134,18 +1034,14 @@ public class Robot extends IterativeRobot {
 	    	
 	    	if (bad90 == true) {
 		    	if (heading > 315 || heading < 1) {
-		    		turnSpeed = .8;
+		    		driveTrain.tankDrive( -.8, .8);
 		    	} else if (heading < 315 && heading > 274) {
-		    		turnSpeed = .58;
+		    		driveTrain.tankDrive( -.58, .58);
 		    	} else if (heading < 274) {
-		    		turnSpeed = 0;
+		    		driveTrain.tankDrive(0, 0);
 		    		bad90 = false;
 		    	}	
-	    	}
-	    				
-	    	if (bad90 == true) {
-	    		driveTrain.tankDrive(-1 * turnSpeed, turnSpeed);
-	    	}	    
+	    	}    
 	    	
 	    // Limit Switches				
 			// Cube Pickup 2.0
