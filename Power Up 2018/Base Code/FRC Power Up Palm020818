@@ -847,13 +847,14 @@ public class Robot extends IterativeRobot {
 		
 		// Motor Controllers
 			// Differential Drive Controls
-			double lValue = leftStick.getY() * -1; // Left Drive Speed
-			double rValue = rightStick.getY() * -1; // Right Drive Speed
+			double lValue = leftStick.getY(); // Left Drive Speed
+			double rValue = rightStick.getY(); // Right Drive Speed
 			driveTrain.tankDrive(lValue, rValue); // Tank Drive Control
 			
 			// Encoder Controls
 			double encLD = leftEnc.getDistance() * -1; // Left Encoder Value
 			double encRD = rightEnc.getDistance() * 1; // Right Encoder Value
+			double encLift = liftEnc.getDistance() * 1; // Lift Encoder Value
 			// System.out.println(encRD);
 	    	
 			// Intake Controls
