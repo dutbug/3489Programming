@@ -1,0 +1,220 @@
+package org.usfirst.frc.team3489.robot;
+
+/*
+Alex 02/15/2018 - Palm Base Code
+
+Left Stick Buttons
+ * 1 - Camera POV Up
+ * 7 - Shift Gears 50%
+ * Y - Left Drive
+
+Right Stick Buttons
+ * 1 - Camera POV Down
+ * 7 - Shift Gears 100%
+ * Y - Right Drive
+
+Manipulator Stick Buttons
+ * 1 - **Retractor Up?**	
+ * 2 - **Retractor Down?**
+ * 3 - Open Gripper	
+ * 4 - Close Gripper			
+ * 5 - Kill Lift
+ * 6 - Kill Intake
+ * 7 - Floor Position
+ * 8 - Switch Position 
+ * 9 - Low Scale Position
+ * 10 - High Scale Position	
+ * 11 - Climber Up
+ * 12 - Climber Down
+ * +X - Only Left Outtake
+ * -X - Only Right Outake 
+ * +Y - Cube Outtake	
+ * -Y - Cube Intake
+ * +Z - Invert Left Intake
+ * -Z - Invert Right Intake
+ * POV Up (0) - Lifter Up
+ * POV Down (180) - Lifter Down
+*/
+
+import com.ctre.phoenix.motorcontrol.can.*;
+import edu.wpi.first.wpilibj.DigitalInput;
+import edu.wpi.first.wpilibj.DoubleSolenoid;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.drive.DifferentialDrive;
+import edu.wpi.first.wpilibj.Encoder;
+import edu.wpi.first.wpilibj.IterativeRobot;
+import edu.wpi.first.wpilibj.Joystick;
+import edu.wpi.first.wpilibj.Solenoid;
+
+public class Robot extends IterativeRobot {
+	
+	Joystick leftStick = new Joystick(1); // Left Driver Joystick
+	Joystick rightStick = new Joystick(2); // Right Driver Joystick
+	Joystick maniStick = new Joystick(3); // Manipulator Joystick
+	WPI_TalonSRX m1 = new WPI_TalonSRX(1); // Front Left Motor
+	WPI_TalonSRX m2 = new WPI_TalonSRX(2); // Front Right Motor
+	WPI_TalonSRX m3 = new WPI_TalonSRX(3); // Back Left Motor (Slave)
+	WPI_TalonSRX m4 = new WPI_TalonSRX(4); // Back Right Motor (Slave)
+	WPI_TalonSRX m5 = new WPI_TalonSRX(5); // Right Intake Motor
+	WPI_TalonSRX m6 = new WPI_TalonSRX(6); // Lift Motor
+	// WPI_TalonSRX m7 = new WPI_TalonSRX(7); // Climb Motor
+	WPI_TalonSRX m8 = new WPI_TalonSRX(8); // Left Intake Motor
+	DifferentialDrive driveTrain = new DifferentialDrive(m1, m2); // Main Drive Train
+	Solenoid s0 = new Solenoid(20, 0); // Shot Pin
+	Solenoid s1 = new Solenoid(20, 1); // Lift Break
+	Solenoid s2 = new Solenoid(20, 2); // 60 PSI Gripper
+	Solenoid s3 = new Solenoid(20, 3); // 20 PSI Gripper
+	DoubleSolenoid s45 = new DoubleSolenoid(20, 4, 5);
+	DigitalInput autoCube = new DigitalInput(3); // Auto Grip and Retract With Cube
+	DigitalInput topRung = new DigitalInput(10); // Fully Climbed Rung
+	Encoder leftEnc = new Encoder(4, 5, false, Encoder.EncodingType.k2X); // Left Drive Encoder
+	Encoder rightEnc = new Encoder(6, 7, false, Encoder.EncodingType.k2X); // Right Drive Encoder
+	Encoder liftEnc = new Encoder(8, 9, false, Encoder.EncodingType.k2X); // Lift Encoder
+	
+	// Booleans
+		boolean inTake; // Run Intake
+		boolean outTake; // Run Outtake
+		boolean killLift; // Kills Lifter Commands
+		boolean killIntake; // Kills Intake Commands
+		boolean killClimb; // Kills Climber Commands
+		boolean gripCube; // Grips Cube and Stops Intake
+
+	@Override
+    public void teleopInit() {
+		// Booleans
+			inTake = false;
+			outTake = false;
+			killLift = false;
+			killIntake = false;
+			killClimb = false;
+			gripCube = false;
+			
+		// Resets
+			leftEnc.reset();
+			rightEnc.reset();
+    }
+    
+	@Override
+    public void teleopPeriodic() {
+		
+		// Motor Controllers
+			// Differential Drive Controls
+			double lValue = leftStick.getY() * -1; // Left Drive Speed
+			double rValue = rightStick.getY() * -1; // Right Drive Speed
+			driveTrain.tankDrive(lValue, rValue); // Tank Drive Control
+			
+			// Encoder Controls
+			double encLD = leftEnc.getDistance() * -1; // Left Encoder Value
+			double encRD = rightEnc.getDistance() * 1; // Right Encoder Value
+			// System.out.println(encRD);
+	    	
+			// Intake Controls
+	    	double lIntake = maniStick.getY() * 1; // Left Intake Speed		Y - Axis
+	    	double rIntake = maniStick.getY() * -1; // Right Intake Speed 	Y - Axis
+	    	double loIntake = maniStick.getZ() * 1; // Left Intake Speed	Z - Axis
+	    	double roIntake = maniStick.getZ() * -1; // Right Intake Speed	Z - Axis
+	    	
+	    	// Intake 2.0
+	    	if (maniStick.getY() >= .5 && killIntake == false) {
+	    		m5.set(lIntake *-1); // Starts Right Outtake
+	    		m8.set(rIntake * -1); // Starts Left Outtake
+	    	} else if (maniStick.getY() <= -.5) {
+	    		m5.set(lIntake * -1); // Starts Right Intake
+	    		m8.set(rIntake * -1); // Starts Left Intake
+	    		killIntake = false;
+	    		gripCube = false;
+	    	} else if (maniStick.getZ() <= -.5 && killIntake == false) {
+	    		m5.set(loIntake * 1); // Starts Right Intake
+	    		m8.set(roIntake * -1); // Starts Left Intake
+	    		gripCube = false;
+	    	} else if (maniStick.getZ() >= .5 && killIntake == false) {
+	    		m5.set(loIntake * 1); // Starts Right Intake
+	    		m8.set(roIntake * -1); // Starts Left Intake
+	    		gripCube = false;
+	    	} else { 
+	    		m5.set(0); // Stops Right Intake
+	    		m8.set(0); // Stops Left Intake
+	    	}
+	    	
+	    	/*
+	    	// TODO
+	    	// Climber
+	    	if (maniStick.getRawButton(11) && killClimb == false) {
+	    		m7.set(1);
+	    	} else if (maniStick.getRawButton(12)) {
+	    		m7.set(-1);
+	    	} else {
+	    		m7.set(0);
+	    	}
+	    	*/
+	    	
+	    	// Lifter 2.0
+	    	if (maniStick.getPOV() == 0) {
+	    		m6.set(1); // Moves Lifter Up
+	    	} else if (maniStick.getPOV() == 180) {
+	    		m6.set(-1);
+	    		s1.set(false); // Moves Lifter Down
+	    	} else {
+	    		m6.set(0);
+	    	}
+    	
+    	// Pneumatics
+	    	// Gripper
+	    	if (maniStick.getRawButton(3)) {
+	    		s2.set(false); // Opens Gripper
+	    	} else if (maniStick.getRawButton(4)) {
+	    		s2.set(true); // Closes Gripper
+	    	}
+	    	
+	    	// Gear Shifter OR Drive Shifter
+	    	if (leftStick.getRawButton(1)) {
+	    		s3.set(true); // Change Speed To 100%
+	    	} else if (rightStick.getRawButton(1)) {
+	    		s3.set(false); // Change Speed To 50%
+	    	}
+	    	
+	    // Limit Switches				
+			// Cube Pickup 2.0
+			if (autoCube.get() == false) {
+			    gripCube = true; // Grips Cube
+			    killIntake = true;
+			}
+			
+			if (gripCube == true) {
+				s2.set(true);
+			}
+			if (gripCube == false) {
+				s2.set(false);
+			}		
+			
+			// Climbed
+			if (topRung.get() == false) {
+				killClimb = true;
+			}
+				
+		// Kill Commands
+			// Kill Lift
+			if (maniStick.getRawButton(5)) {
+				killLift = true;
+			}
+			if (killLift == true) {
+				m6.set(0);
+				killLift = false;
+			}
+			
+			// Kill Intake
+			if (maniStick.getRawButton(6)) {
+				killIntake = true;
+			}
+			if (killIntake == true) {
+				m5.set(0);
+				m8.set(0);
+			}
+			
+			// Kill Climber
+			if (killClimb = true) {
+				// m7.set(0);
+				killClimb = false;
+			}
+	}
+}
