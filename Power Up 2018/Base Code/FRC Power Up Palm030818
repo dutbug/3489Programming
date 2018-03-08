@@ -1,0 +1,1299 @@
+package org.usfirst.frc.team3489.robot;
+
+/*
+Alex 02/15/2018 - Palm Base Code
+
+Left Stick Buttons
+ * 2 - Engage Drive Train
+ * 7 - Camera POV Up
+ * Y - Left Drive
+ * POV Up (0) - Release Pin (Pt 1)
+ * POV Down (180) - Climb Upward (Pt 1)
+
+Right Stick Buttons
+ * 2 - Engage Climber 
+ * 7 - Camera POV Down
+ * Y - Right Drive
+ * POV Up (0) - Release Pin (Pt 2)
+ * POV Down (180) - Climb Upward (Pt 2)
+  
+Manipulator Stick Buttons
+ * 1 - 
+ * 2 - 
+ * 3 - Open Gripper	
+ * 4 - Close Gripper			
+ * 5 - Kill Lift
+ * 6 - Kill Intake
+ * 7 - Floor Position
+ * 8 - Switch Position
+ * 9 - Low Scale Position
+ * 10 - High Scale Position	
+ * 11 - 
+ * 12 - 
+ * +Y - Cube Outtake	
+ * -Y - Cube Intake
+ * +Z - Invert Left Intake
+ * -Z - Invert Right Intake
+ * POV Up (0) - Lifter Up
+ * POV Down (180) - Lifter Down
+*/
+
+import com.kauailabs.navx.frc.AHRS;
+import com.ctre.phoenix.motorcontrol.can.*;
+import com.ctre.phoenix.motion.SetValueMotionProfile;
+import com.ctre.phoenix.motorcontrol.ControlMode;
+import com.ctre.phoenix.motorcontrol.FeedbackDevice;
+import edu.wpi.first.wpilibj.AnalogInput;
+import edu.wpi.first.wpilibj.CameraServer;
+import edu.wpi.first.wpilibj.DigitalInput;
+import edu.wpi.first.wpilibj.DoubleSolenoid;
+import edu.wpi.first.wpilibj.DoubleSolenoid.*;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.drive.DifferentialDrive;
+import edu.wpi.first.wpilibj.Encoder;
+import edu.wpi.first.wpilibj.internal.HardwareHLUsageReporting;
+import edu.wpi.first.wpilibj.IterativeRobot;
+import edu.wpi.first.wpilibj.Joystick;
+//import edu.wpi.first.wpilibj.RobotController;
+import edu.wpi.first.wpilibj.SPI;
+import edu.wpi.first.wpilibj.Solenoid;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.PowerDistributionPanel;
+//import java.util.function.BinaryOperator;
+
+public class Robot extends IterativeRobot {
+
+	Joystick leftStick = new Joystick(1); // Left Driver Joystick
+	Joystick rightStick = new Joystick(2); // Right Driver Joystick
+	Joystick maniStick = new Joystick(3); // Manipulator Joystick
+	WPI_TalonSRX m1 = new WPI_TalonSRX(1); // Front Left Motor
+	WPI_TalonSRX m2 = new WPI_TalonSRX(2); // Front Right Motor
+	WPI_TalonSRX m3 = new WPI_TalonSRX(3); // Back Left Motor (Slave)
+	WPI_TalonSRX m4 = new WPI_TalonSRX(4); // Back Right Motor (Slave)
+	WPI_TalonSRX m5 = new WPI_TalonSRX(5); // Right Intake Motor
+	TalonSRX m6 = new TalonSRX(6); // Lift Motor
+	// WPI_TalonSRX m7 = new WPI_TalonSRX(7); // Spare
+	WPI_TalonSRX m8 = new WPI_TalonSRX(8); // Left Intake Motor
+	DifferentialDrive driveTrain = new DifferentialDrive(m1, m2); // Main Drive Train
+	Solenoid s0 = new Solenoid(20, 0); // Shot Pin
+	Solenoid s1 = new Solenoid(20, 1); // Lift Break
+	Solenoid s2 = new Solenoid(20, 2); // 60 PSI Gripper
+	Solenoid s3 = new Solenoid(20, 3); // 20 PSI Gripper
+	DoubleSolenoid s45 = new DoubleSolenoid(20, 4, 5); // Rocket Box Shifter
+	DigitalInput autoCube = new DigitalInput(3); // Auto Grip and Retract With Cube
+	DigitalInput topRung = new DigitalInput(8); // Fully Climbed Rung
+	Encoder leftEnc = new Encoder(4, 5, false, Encoder.EncodingType.k2X); // Left Drive Encoder
+	Encoder rightEnc = new Encoder(6, 7, false, Encoder.EncodingType.k2X); // Right Drive Encoder
+	private AHRS navx = new AHRS(SPI.Port.kMXP); // NavX Component
+	DriverStation.Alliance color; // Alliance Color
+	int step = 1; // Initial Step Value
+	PowerDistributionPanel pdp = new PowerDistributionPanel();
+
+	// Booleans
+	boolean inTake; // Run Intake
+	boolean outTake; // Run Outtake
+	boolean killLift; // Kills Lifter Commands
+	boolean killIntake; // Kills Intake Commands
+	boolean killClimb; // Kills Climber Commands
+	boolean gripCube; // Grips Cube and Stops Intake
+
+	// Defines location in Encoder Units (EUs)
+	double startPos = m6.getSelectedSensorPosition(0);
+	double floorPos = startPos;
+	double switchPos = startPos + 7777; // Was 6677 - Alex
+	double scaleLPos = startPos + 20708;
+	double scaleHPos = startPos + 26708;
+
+	// PID for Lifter
+	int PIDloop = 0; // primary PID loop
+	int PIDtimeout = 10; // set to zero to skip waiting for confirmation, set to nonzero to wait and
+							// report to DS if action fails.
+	boolean PIDsensorphase = true; // Talon does not report sensor out of phase
+	boolean PIDpositivevalue = true; // Direction of positive values
+	// PID Numbers to play with
+	double theF = 0.0;
+	double theP = 0.55;
+	double theI = 0.0;
+	double theD = 0.0;
+
+	double lifterOutputPercent = 0.0;
+	double targetPositionRotations;
+	boolean autoLift = false;
+
+	// Autonomous
+	// Selection
+	//Aidan 24Feb2018 Changed Ports to work on NavX. Check NavX website for port numbers.
+	//https://www.pdocs.kauailabs.com/navx-mxp/installation/io-expansion/
+	DigitalInput ch1 = new DigitalInput(19); // Left Switch Score/Autoline
+	DigitalInput ch2 = new DigitalInput(20); // Middle Switch Score/Autoline
+	DigitalInput ch3 = new DigitalInput(21); // Right Switch Score/Autoline
+	DigitalInput ch4 = new DigitalInput(22); // straight Path Left Switch
+	DigitalInput ch5 = new DigitalInput(23); // straight Path Right Switch
+
+	// Distance
+	// Left Side Switch Scoring
+	double leftDis1 = 2400;		//2845;
+	double leftDis2 = 350;		//593;
+	double leftDis3 = -350;		//-593;
+	double leftDis4 = 900;		//1189;
+	double leftDis5 = 1200;		//1778;
+	// Left Side Switch Driving
+	double leftDis6 = 2900;		//4030;
+	double leftDis7 = 1200;		//1778;
+	// Middle Left Switch Scoring
+	double midlDis1 = 800;		//1185;
+	double midlDis2 = 1400;		//2032;
+	double midlDis3 = 1150;		//1693;
+	double midlDis4 = 350;		//593;
+	double midlDis5 = -350;		//-593;
+	double midlDis6 = 1200;		//1778;
+	// Middle Right Switch Scoring
+	double midrDis1 = 800;		//1185;
+	double midrDis2 = 1400;		//2032;
+	double midrDis3 = 1150;		//1693;
+	double midrDis4 = 350;		//593;
+	double midrDis5 = -350;		//-593;
+	double midrDis6 = 1200;		//1778;
+	// Right Side Switch Scoring
+	double rightDis1 = 2400;	//2845;
+	double rightDis2 = 350;		//593;
+	double rightDis3 = -350;	//-593;
+	double rightDis4 = 900;		//1189;
+	double rightDis5 = 1200;	//1778;
+	// Right Side Switch Driving
+	double rightDis6 = 2900;	//4030;
+	double rightDis7 = 1200;	//1778;
+
+	// Angles
+	// Left Side Switch Scoring
+	double leftAng1 = 90;
+	double leftAng2 = -90;
+	double leftAng3 = 90;
+	// Left Side Switch Driving
+	double leftAng4 = 90;
+	// Middle Left Switch Scoring
+	double midlAng1 = -90;
+	double midlAng2 = 90;
+	double midlAng3 = 90;
+	double midlAng4 = -90;
+	// Middle Right Switch Scoring
+	double midrAng1 = 90;
+	double midrAng2 = -90;
+	double midrAng3 = -90;
+	double midrAng4 = 90;
+	// Right Side Switch Scoring
+	double rightAng1 = -90;
+	double rightAng2 = 90;
+	double rightAng3 = -90;
+	// Right Side Switch Driving
+	double rightAng4 = -90;
+	// Angle Offset
+	double angleOff = .5;
+
+	public void codeVersion() {
+		DriverStation.getInstance().InDisabled(true);
+		System.out.println("*******************************************");
+		System.out.println("*** Robot Drive Code v11 2018           ***");
+		System.out.println("*** 2/24/18                             ***");
+		System.out.println("*******************************************");
+	}
+	
+	@Override
+	public void robotInit() {
+
+		// Safety
+		driveTrain.setSafetyEnabled(false);
+
+		// Camera
+		try {
+			CameraServer.getInstance().startAutomaticCapture();
+			// system.out.println("Cam0");
+		} catch (Exception e) {
+			// system.out.println("Failed Vision");
+		}
+
+		// NavX
+		// navx.reset();
+
+		// Encoders
+		leftEnc.reset();
+		rightEnc.reset();
+		
+		//PID Setup pt2
+		//These values are set in the top of the class, here we use them to configure the talon
+		// sensor and sensor direction - multiple ways to configure the talon
+		m6.configSelectedFeedbackSensor(FeedbackDevice.CTRE_MagEncoder_Relative, PIDloop,PIDtimeout);
+		// ensure sensor is positive when output is positive
+		m6.setSensorPhase(PIDsensorphase);
+		// set direction you want forward/positive to be.
+		m6.setInverted(PIDpositivevalue);
+		// set the peak and nominal outputs, 0 = no power 1 / -1 = full 12volts
+		m6.configNominalOutputForward(0, PIDtimeout);
+		m6.configNominalOutputReverse(0, PIDtimeout);
+		m6.configPeakOutputForward(0.5, PIDtimeout);
+		m6.configPeakOutputReverse(-0.25, PIDtimeout);
+		// allowable closed-loop error, Closed-Loop output will be neutral within this range
+		m6.configAllowableClosedloopError(0, PIDloop, PIDtimeout);
+		// closed loop gains
+		m6.config_kF(PIDloop, theF, PIDtimeout);
+		m6.config_kP(PIDloop, theP, PIDtimeout); 
+		m6.config_kI(PIDloop, theI, PIDtimeout); 
+		m6.config_kD(PIDloop, theD, PIDtimeout);
+		
+		//MagEncoder's absolute 360 degree position
+		 //set the relative sensor to absolute position
+		int absolutePosition = m6.getSensorCollection().getPulseWidthPosition();
+		/* Here is some stuff from Cross The Roads Electronics that FRC temas need to do
+		 * mask out overflows, keep bottom 12 bits */
+		absolutePosition &= 0xFFF;
+		if (PIDsensorphase)
+			absolutePosition *= -1;
+		if (PIDpositivevalue)
+			absolutePosition *= -1;
+		//set the quadrature (relative) sensor to match absolute */
+		m6.setSelectedSensorPosition(absolutePosition, PIDloop, PIDtimeout);
+
+		// Invert
+		m1.setInverted(true);
+		m2.setInverted(true);
+		m3.setInverted(true);
+		m4.setInverted(true);
+		m6.setInverted(true);
+		
+		// Slaves
+		m3.follow(m1); // Back Left Motor (Slave) Follows Front Left Motor
+		m4.follow(m2); // Back Right Motor (Slave) Follows Front Right Motor
+
+		// SmartDashboard
+
+		// Solenoids
+		s0.set(false);
+		s1.set(true);
+		s2.set(true);
+		s3.set(false); // Sets Gripper to a constant 20 psi
+		s45.set(Value.kReverse); // Sets RocketBoxes to Drive
+	}
+
+	@Override
+	public void autonomousInit() {
+		// Resets
+		leftEnc.reset();
+		rightEnc.reset();
+		navx.reset();
+		step = 1;
+		
+		// Preset Lifter
+		s1.set(false);
+		targetPositionRotations = switchPos;
+		m6.set(ControlMode.PercentOutput, 0.45);
+		
+		// Motor Resets
+		m5.set(0); // Stops Right Outtake
+		m8.set(0); // Stops Left Outtake
+		
+	}
+
+	@Override
+	public void autonomousPeriodic() {
+
+		double encLD = leftEnc.getDistance() * -1; // Left Encoder Value
+		double encRD = rightEnc.getDistance() * 1; // Right Encoder Value
+		double navxY = navx.getYaw(); // NavX Yaw Value
+		double heading = navx.getFusedHeading(); // NavX Heading Value
+		
+		SmartDashboard.putNumber("Left Encoder", encLD);
+		SmartDashboard.putNumber("Right Encoder", encRD);
+
+		// System.out.println(heading);
+		//Lock in Initial lifter position
+		
+		if (switchPos <= m6.getSelectedSensorPosition(0)) {
+			m6.set(ControlMode.PercentOutput, 0);
+			s1.set(true);
+		}
+		
+		String gameData;
+		gameData = DriverStation.getInstance().getGameSpecificMessage();
+		
+		if (ch1.get() == false) { // Left Switch Autonomous Selection
+			switch (step) {
+			case 1: // Decision Method
+				if (gameData.charAt(0) == 'L') { // Run Scoring Method
+					// s1.set(true);
+					// s2.set(true);
+					step++;
+				} else if (gameData.charAt(0) == 'R') { // Run Driving Method
+					// s1.set(true);
+					// s2.set(true);
+					step = 11;
+				}
+				rightEnc.reset();
+				navx.reset();
+				break;
+			case 2: // Forward ~ 165 in
+				if (navxY <= angleOff && navxY >= -angleOff && encRD <= leftDis1) {
+					driveTrain.tankDrive(.6, .6);
+				} else if (navxY >= angleOff && encRD <= leftDis1) {
+					driveTrain.tankDrive(.6, .65);
+				} else if (navxY <= -angleOff && encRD <= leftDis1) {
+					driveTrain.tankDrive(.65, .6);
+				} else if (encRD >= leftDis1) {
+					navx.reset();
+					step++;
+				}
+				break;
+			case 3: // Rotate 90
+				if (heading < 45 || heading > 359) {
+					driveTrain.tankDrive(.6, -.6);
+				} else if (heading > 45 && heading < 84) {
+					driveTrain.tankDrive(.48, -.48);
+				} else if (heading > 84 && heading < 350) {
+					driveTrain.tankDrive(0, 0);
+					navx.reset();
+					rightEnc.reset();
+					step++;
+				}
+				break;
+			case 4: // Forward ~ 10 in
+				if (navxY <= angleOff && navxY >= -angleOff && encRD <= leftDis2) {
+					driveTrain.tankDrive(.6, .6);
+				} else if (navxY >= angleOff && encRD <= leftDis2) {
+					driveTrain.tankDrive(.6, .65);
+				} else if (navxY <= -angleOff && encRD <= leftDis2) {
+					driveTrain.tankDrive(.65, .6);
+				} else if (encRD >= leftDis2) {
+					navx.reset();
+					step++;
+				}
+				break;
+			case 5: // Place Cube
+				driveTrain.tankDrive(0, 0);
+				rightEnc.reset();
+				m5.set(1); // Starts Right Outtake
+				m8.set(-1); // Starts Left Outtake
+				Timer.delay(1);
+				step++;
+				break;
+			case 6: // Reverse ~ 10 in
+				m5.set(0); // Stops Right Outtake
+				m8.set(0); // Stops Left Outtake
+				if (navxY <= angleOff && navxY >= -angleOff && encRD >= leftDis3) {
+					driveTrain.tankDrive(-.6, -.6);
+				} else if (navxY >= angleOff && encRD >= leftDis3) {
+					driveTrain.tankDrive(-.6, -.65);
+				} else if (navxY <= -angleOff && encRD >= leftDis3) {
+					driveTrain.tankDrive(-.65, -.6);
+				} else if (encRD <= leftDis3) {
+					navx.reset();
+					step++;
+				}
+				break;
+			case 7: // Rotate -90
+				if (heading > 315 || heading < 1) {
+					driveTrain.tankDrive(-.6, .6);
+				} else if (heading < 315 && heading > 274) {
+					driveTrain.tankDrive(-.48, .48);
+				} else if (heading < 274 && heading > 10) {
+					driveTrain.tankDrive(0, 0);
+					navx.reset();
+					rightEnc.reset();
+					step++;
+				}
+				break;
+			case 8: // Forward ~ 100 in
+				if (navxY <= angleOff && navxY >= -angleOff && encRD <= leftDis4) {
+					driveTrain.tankDrive(.6, .6);
+				} else if (navxY >= angleOff && encRD <= leftDis4) {
+					driveTrain.tankDrive(.6, .65);
+				} else if (navxY <= -angleOff && encRD <= leftDis4) {
+					driveTrain.tankDrive(.65, .6);
+				} else if (encRD >= leftDis4) {
+					navx.reset();
+					step++;
+				}
+				break;
+			case 9: // Rotate 90
+				if (heading < 45 || heading > 359) {
+					driveTrain.tankDrive(.6, -.6);
+				} else if (heading > 45 && heading < 84) {
+					driveTrain.tankDrive(.48, -.48);
+				} else if (heading > 84 && heading < 350) {
+					driveTrain.tankDrive(0, 0);
+					navx.reset();
+					rightEnc.reset();
+					step++;
+				}
+				break;
+			case 10: // Forward ~ 100 in
+				if (navxY <= angleOff && navxY >= -angleOff && encRD <= leftDis5) {
+					driveTrain.tankDrive(.6, .6);
+				} else if (navxY >= angleOff && encRD <= leftDis5) {
+					driveTrain.tankDrive(.6, .65);
+				} else if (navxY <= -angleOff && encRD <= leftDis5) {
+					driveTrain.tankDrive(.65, .6);
+				} else if (encRD >= leftDis5) {
+					navx.reset();
+					step = 14;
+				}
+				break;
+			case 11: // Forward ~ 250 in
+				if (navxY <= angleOff && navxY >= -angleOff && encRD <= leftDis6) {
+					driveTrain.tankDrive(.6, .6);
+				} else if (navxY >= angleOff && encRD <= leftDis6) {
+					driveTrain.tankDrive(.6, .65);
+				} else if (navxY <= -angleOff && encRD <= leftDis6) {
+					driveTrain.tankDrive(.65, .6);
+				} else if (encRD >= leftDis6) {
+					navx.reset();
+					step++;
+				}
+				break;
+			case 12: // Rotate 90
+				if (heading < 45 || heading > 359) {
+					driveTrain.tankDrive(.6, -.6);
+				} else if (heading > 45 && heading < 84) {
+					driveTrain.tankDrive(.48, -.48);
+				} else if (heading > 84 && heading < 350) {
+					driveTrain.tankDrive(0, 0);
+					navx.reset();
+					rightEnc.reset();
+					step++;
+				}
+				break;
+			case 13: // Forward ~ 100 in
+				if (navxY <= angleOff && navxY >= -angleOff && encRD <= leftDis7) {
+					driveTrain.tankDrive(.6, .6);
+				} else if (navxY >= angleOff && encRD <= leftDis7) {
+					driveTrain.tankDrive(.6, .65);
+				} else if (navxY <= -angleOff && encRD <= leftDis7) {
+					driveTrain.tankDrive(.65, .6);
+				} else if (encRD >= leftDis7) {
+					navx.reset();
+					step++;
+				}
+				break;
+			case 14: // Stop
+				driveTrain.tankDrive(0, 0);
+				break;
+			}
+		} else if (ch2.get() == false) { // Middle Switch Autonomous Selection
+			switch (step) {
+			case 1: // Decision Method
+				if (gameData.charAt(0) == 'L') { // Run Left Scoring Method
+					// s1.set(true);
+					// s2.set(true);
+					step++;
+				} else if (gameData.charAt(0) == 'R') { // Run Right Scoring Method
+					// s1.set(true);
+					// s2.set(true);
+					step = 13;
+				}
+				rightEnc.reset();
+				navx.reset();
+				break;
+			case 2: // Forward ~ 90 in
+				if (navxY <= angleOff && navxY >= -angleOff && encRD <= midlDis1) {
+					driveTrain.tankDrive(.6, .6);
+				} else if (navxY >= angleOff && encRD <= midlDis1) {
+					driveTrain.tankDrive(.6, .65);
+				} else if (navxY <= -angleOff && encRD <= midlDis1) {
+					driveTrain.tankDrive(.65, .6);
+				} else if (encRD >= midlDis1) {
+					navx.reset();
+					step++;
+				}
+				break;
+			case 3: // Rotate -90
+				if (heading > 315 || heading < 1) {
+					driveTrain.tankDrive(-.6, .6);
+				} else if (heading < 315 && heading > 274) {
+					driveTrain.tankDrive(-.48, .48);
+				} else if (heading < 274 && heading > 10) {
+					driveTrain.tankDrive(0, 0);
+					navx.reset();
+					rightEnc.reset();
+					step++;
+				}
+				break;
+			case 4: // Forward ~ 130 in
+				if (navxY <= angleOff && navxY >= -angleOff && encRD <= midlDis2) {
+					driveTrain.tankDrive(.6, .6);
+				} else if (navxY >= angleOff && encRD <= midlDis2) {
+					driveTrain.tankDrive(.6, .65);
+				} else if (navxY <= -angleOff && encRD <= midlDis2) {
+					driveTrain.tankDrive(.65, .6);
+				} else if (encRD >= midlDis2) {
+					navx.reset();
+					step++;
+				}
+				break;
+			case 5: // Rotate 90
+				if (heading < 45 || heading > 359) {
+					driveTrain.tankDrive(.6, -.6);
+				} else if (heading > 45 && heading < 84) {
+					driveTrain.tankDrive(.48, -.48);
+				} else if (heading > 84 && heading < 350) {
+					driveTrain.tankDrive(0, 0);
+					navx.reset();
+					rightEnc.reset();
+					step++;
+				}
+				break;
+			case 6: // Forward ~ 75 in
+				if (navxY <= angleOff && navxY >= -angleOff && encRD <= midlDis3) {
+					driveTrain.tankDrive(.6, .6);
+				} else if (navxY >= angleOff && encRD <= midlDis3) {
+					driveTrain.tankDrive(.6, .65);
+				} else if (navxY <= -angleOff && encRD <= midlDis3) {
+					driveTrain.tankDrive(.65, .6);
+				} else if (encRD >= midlDis3) {
+					navx.reset();
+					step++;
+				}
+				break;
+			case 7: // Rotate 90
+				if (heading < 45 || heading > 359) {
+					driveTrain.tankDrive(.2, -.2);
+				} else if (heading > 45 && heading < 84) {
+					driveTrain.tankDrive(.48, -.48);
+				} else if (heading > 84 && heading < 350) {
+					driveTrain.tankDrive(0, 0);
+					navx.reset();
+					rightEnc.reset();
+					step++;
+				}
+				break;
+			case 8: // Forward ~ 10 in
+				if (navxY <= angleOff && navxY >= -angleOff && encRD <= midlDis4) {
+					driveTrain.tankDrive(.6, .6);
+				} else if (navxY >= angleOff && encRD <= midlDis4) {
+					driveTrain.tankDrive(.6, .65);
+				} else if (navxY <= -angleOff && encRD <= midlDis4) {
+					driveTrain.tankDrive(.65, .6);
+				} else if (encRD >= midlDis4) {
+					navx.reset();
+					step++;
+				}
+				break;
+			case 9: // Place Cube
+				driveTrain.tankDrive(0, 0);
+				rightEnc.reset();
+				m5.set(1); // Starts Right Outtake
+				m8.set(-1); // Starts Left Outtake
+				Timer.delay(1);
+				step++;
+				break;
+			case 10: // Reverse ~ 10 in
+				m5.set(0); // Stops Right Outtake
+				m8.set(0); // Stops Left Outtake
+				if (navxY <= angleOff && navxY >= -angleOff && encRD >= midlDis5) {
+					driveTrain.tankDrive(-.6, -.6);
+				} else if (navxY >= angleOff && encRD >= midlDis5) {
+					driveTrain.tankDrive(-.6, -.65);
+				} else if (navxY <= -angleOff && encRD >= midlDis5) {
+					driveTrain.tankDrive(-.65, -.6);
+				} else if (encRD <= midlDis5) {
+					navx.reset();
+					step++;
+				}
+				break;
+			case 11: // Rotate -90
+				if (heading > 315 || heading < 1) {
+					driveTrain.tankDrive(-.6, .6);
+				} else if (heading < 315 && heading > 274) {
+					driveTrain.tankDrive(-.48, .48);
+				} else if (heading < 274 && heading > 10) {
+					driveTrain.tankDrive(0, 0);
+					navx.reset();
+					rightEnc.reset();
+					step++;
+				}
+				break;
+			case 12: // Forward ~ 100 in
+				if (navxY <= angleOff && navxY >= -angleOff && encRD <= midlDis6) {
+					driveTrain.tankDrive(.6, .6);
+				} else if (navxY >= angleOff && encRD <= midlDis6) {
+					driveTrain.tankDrive(.6, .65);
+				} else if (navxY <= -angleOff && encRD <= midlDis6) {
+					driveTrain.tankDrive(.65, .6);
+				} else if (encRD >= midlDis6) {
+					navx.reset();
+					step = 24;
+				}
+				break;
+			case 13: // Forward ~ 90 in
+				if (navxY <= angleOff && navxY >= -angleOff && encRD <= midrDis1) {
+					driveTrain.tankDrive(.6, .6);
+				} else if (navxY >= angleOff && encRD <= midrDis1) {
+					driveTrain.tankDrive(.6, .65);
+				} else if (navxY <= -angleOff && encRD <= midrDis1) {
+					driveTrain.tankDrive(.65, .6);
+				} else if (encRD >= midrDis1) {
+					navx.reset();
+					step++;
+				}
+				break;
+			case 14: // Rotate 90
+				if (heading < 45 || heading > 359) {
+					driveTrain.tankDrive(.6, -.6);
+				} else if (heading > 45 && heading < 84) {
+					driveTrain.tankDrive(.48, -.48);
+				} else if (heading > 84 && heading < 350) {
+					driveTrain.tankDrive(0, 0);
+					navx.reset();
+					rightEnc.reset();
+					step++;
+				}
+				break;
+			case 15: // Forward ~ 130 in
+				if (navxY <= angleOff && navxY >= -angleOff && encRD <= midrDis2) {
+					driveTrain.tankDrive(.6, .6);
+				} else if (navxY >= angleOff && encRD <= midrDis2) {
+					driveTrain.tankDrive(.6, .65);
+				} else if (navxY <= -angleOff && encRD <= midrDis2) {
+					driveTrain.tankDrive(.65, .6);
+				} else if (encRD >= midrDis2) {
+					navx.reset();
+					step++;
+				}
+				break;
+			case 16: // Rotate -90
+				if (heading > 315 || heading < 1) {
+					driveTrain.tankDrive(-.6, .6);
+				} else if (heading < 315 && heading > 274) {
+					driveTrain.tankDrive(-.48, .48);
+				} else if (heading < 274 && heading > 10) {
+					driveTrain.tankDrive(0, 0);
+					navx.reset();
+					rightEnc.reset();
+					step++;
+				}
+				break;
+			case 17: // Forward ~ 75 in
+				if (navxY <= angleOff && navxY >= -angleOff && encRD <= midrDis3) {
+					driveTrain.tankDrive(.6, .6);
+				} else if (navxY >= angleOff && encRD <= midrDis3) {
+					driveTrain.tankDrive(.6, .65);
+				} else if (navxY <= -angleOff && encRD <= midrDis3) {
+					driveTrain.tankDrive(.65, .6);
+				} else if (encRD >= midrDis3) {
+					navx.reset();
+					step++;
+				}
+				break;
+			case 18: // Rotate -90
+				if (heading > 315 || heading < 1) {
+					driveTrain.tankDrive(-.6, .6);
+				} else if (heading < 315 && heading > 274) {
+					driveTrain.tankDrive(-.48, .48);
+				} else if (heading < 274 && heading > 10) {
+					driveTrain.tankDrive(0, 0);
+					navx.reset();
+					rightEnc.reset();
+					step++;
+				}
+				break;
+			case 19: // Forward ~ 10 in
+				if (navxY <= angleOff && navxY >= -angleOff && encRD <= midrDis4) {
+					driveTrain.tankDrive(.6, .6);
+				} else if (navxY >= angleOff && encRD <= midrDis4) {
+					driveTrain.tankDrive(.6, .65);
+				} else if (navxY <= -angleOff && encRD <= midrDis4) {
+					driveTrain.tankDrive(.65, .6);
+				} else if (encRD >= midrDis4) {
+					navx.reset();
+					step++;
+				}
+				break;
+			case 20: // Place Cube
+				driveTrain.tankDrive(0, 0);
+				rightEnc.reset();
+				m5.set(1); // Starts Right Outtake
+				m8.set(-1); // Starts Left Outtake
+				Timer.delay(1);
+				step++;
+				break;
+			case 21: // Reverse ~ 10 in
+				m5.set(0); // Stops Right Outtake
+				m8.set(0); // Stops Left Outtake
+				if (navxY <= angleOff && navxY >= -angleOff && encRD >= midrDis5) {
+					driveTrain.tankDrive(-.6, -.6);
+				} else if (navxY >= angleOff && encRD >= midrDis5) {
+					driveTrain.tankDrive(-.6, -.65);
+				} else if (navxY <= -angleOff && encRD >= midrDis5) {
+					driveTrain.tankDrive(-.65, -.6);
+				} else if (encRD <= midrDis5) {
+					navx.reset();
+					step++;
+				}
+				break;
+			case 22: // Rotate 90
+				if (heading < 45 || heading > 359) {
+					driveTrain.tankDrive(.6, -.6);
+				} else if (heading > 45 && heading < 84) {
+					driveTrain.tankDrive(.48, -.48);
+				} else if (heading > 84 && heading < 350) {
+					driveTrain.tankDrive(0, 0);
+					navx.reset();
+					rightEnc.reset();
+					step++;
+				}
+				break;
+			case 23: // Forward ~ 100 in
+				if (navxY <= angleOff && navxY >= -angleOff && encRD <= midrDis6) {
+					driveTrain.tankDrive(.6, .6);
+				} else if (navxY >= angleOff && encRD <= midrDis6) {
+					driveTrain.tankDrive(.6, .65);
+				} else if (navxY <= -angleOff && encRD <= midrDis6) {
+					driveTrain.tankDrive(.65, .6);
+				} else if (encRD >= midrDis6) {
+					navx.reset();
+					step++;
+				}
+				break;
+			case 24: // Stop
+				driveTrain.tankDrive(0, 0);
+				break;
+			}
+		} else if (ch3.get() == false) { // Right Switch Autonomous Selection
+			switch (step) {
+			case 1: // Decision Method
+				if (gameData.charAt(0) == 'R') { // Run Scoring Method
+					// s1.set(true);
+					// s2.set(true);
+					step++;
+				} else if (gameData.charAt(0) == 'L') { // Run Driving Method
+					// s1.set(true);
+					// s2.set(true);
+					step = 11;
+				}
+				rightEnc.reset();
+				navx.reset();
+				break;
+			case 2: // Forward ~ 165 in
+				if (navxY <= angleOff && navxY >= -angleOff && encRD <= rightDis1) {
+					driveTrain.tankDrive(.6, .6);
+				} else if (navxY >= angleOff && encRD <= rightDis1) {
+					driveTrain.tankDrive(.6, .65);
+				} else if (navxY <= -angleOff && encRD <= rightDis1) {
+					driveTrain.tankDrive(.65, .6);
+				} else if (encRD >= rightDis1) {
+					navx.reset();
+					step++;
+				}
+				break;
+			case 3: // Rotate -90
+				System.out.println("3");
+				if (heading > 315 || heading < 1) {
+					driveTrain.tankDrive(-.6, .6);
+				} else if (heading < 315 && heading > 274) {
+					driveTrain.tankDrive(-.48, .48);
+				} else if (heading < 274 && heading > 10) {
+					driveTrain.tankDrive(0, 0);
+					navx.reset();
+					rightEnc.reset();
+					step++;
+				}
+				break;
+			case 4: // Forward ~ 10 in
+				System.out.println("4");
+				if (navxY <= angleOff && navxY >= -angleOff && encRD <= rightDis2) {
+					driveTrain.tankDrive(.6, .6);
+				} else if (navxY >= angleOff && encRD <= rightDis2) {
+					driveTrain.tankDrive(.6, .65);
+				} else if (navxY <= -angleOff && encRD <= rightDis2) {
+					driveTrain.tankDrive(.65, .6);
+				} else if (encRD >= rightDis2) {
+					navx.reset();
+					step++;
+				}
+				break;
+			case 5: // Place Cube
+				System.out.println("5");
+				driveTrain.tankDrive(0, 0);
+				rightEnc.reset();
+				m5.set(1); // Starts Right Outtake
+				m8.set(-1); // Starts Left Outtake
+				Timer.delay(1);
+				step++;
+				break;
+			case 6: // Reverse ~ 10 in
+				System.out.println("6");
+				m5.set(0); // Stops Right Outtake
+				m8.set(0); // Stops Left Outtake
+				if (navxY <= angleOff && navxY >= -angleOff && encRD >= rightDis3) {
+					driveTrain.tankDrive(-.6, -.6);
+				} else if (navxY >= angleOff && encRD >= rightDis3) {
+					driveTrain.tankDrive(-.6, -.65);
+				} else if (navxY <= -angleOff && encRD >= rightDis3) {
+					driveTrain.tankDrive(-.65, -.6);
+				} else if (encRD <= rightDis3) {
+					navx.reset();
+					step++;
+				}
+				break;
+			case 7: // Rotate 90
+				System.out.println("7");
+				if (heading < 45 || heading > 359) {
+					driveTrain.tankDrive(.6, -.6);
+				} else if (heading > 45 && heading < 84) {
+					driveTrain.tankDrive(.48, -.48);
+				} else if (heading > 84 && heading < 350) {
+					driveTrain.tankDrive(0, 0);
+					navx.reset();
+					rightEnc.reset();
+					step++;
+				}
+				break;
+			case 8: // Forward ~ 100 in
+				System.out.println("8");
+				if (navxY <= angleOff && navxY >= -angleOff && encRD <= rightDis4) {
+					driveTrain.tankDrive(.6, .6);
+				} else if (navxY >= angleOff && encRD <= rightDis4) {
+					driveTrain.tankDrive(.6, .65);
+				} else if (navxY <= -angleOff && encRD <= rightDis4) {
+					driveTrain.tankDrive(.65, .6);
+				} else if (encRD >= rightDis4) {
+					navx.reset();
+					step++;
+				}
+				break;
+			case 9: // Rotate -90
+				System.out.println("9");
+				if (heading > 315 || heading < 1) {
+					driveTrain.tankDrive(-.6, .6);
+				} else if (heading < 315 && heading > 274) {
+					driveTrain.tankDrive(-.48, .48);
+				} else if (heading < 274 && heading > 10) {
+					driveTrain.tankDrive(0, 0);
+					navx.reset();
+					rightEnc.reset();
+					step++;
+				}
+				break;
+			case 10: // Forward ~ 100 in
+				System.out.println("10");
+				if (navxY <= angleOff && navxY >= -angleOff && encRD <= rightDis5) {
+					driveTrain.tankDrive(.6, .6);
+				} else if (navxY >= angleOff && encRD <= rightDis5) {
+					driveTrain.tankDrive(.6, .65);
+				} else if (navxY <= -angleOff && encRD <= rightDis5) {
+					driveTrain.tankDrive(.65, .6);
+				} else if (encRD >= rightDis5) {
+					navx.reset();
+					step = 14;
+				}
+				break;
+			case 11: // Forward ~ 250 in
+				System.out.println("11");
+				if (navxY <= angleOff && navxY >= -angleOff && encRD <= rightDis6) {
+					driveTrain.tankDrive(.6, .6);
+				} else if (navxY >= angleOff && encRD <= rightDis6) {
+					driveTrain.tankDrive(.6, .65);
+				} else if (navxY <= -angleOff && encRD <= rightDis6) {
+					driveTrain.tankDrive(.65, .6);
+				} else if (encRD >= rightDis6) {
+					navx.reset();
+					step++;
+				}
+				break;
+			case 12: // Rotate -90
+				System.out.println("12");
+				if (heading > 315 || heading < 1) {
+					driveTrain.tankDrive(-.6, .6);
+				} else if (heading < 315 && heading > 274) {
+					driveTrain.tankDrive(-.48, .48);
+				} else if (heading < 274 && heading > 10) {
+					driveTrain.tankDrive(0, 0);
+					navx.reset();
+					rightEnc.reset();
+					step++;
+				}
+				break;
+			case 13: // Forward ~ 100 in
+				System.out.println("13");
+				if (navxY <= angleOff && navxY >= -angleOff && encRD <= rightDis7) {
+					driveTrain.tankDrive(.6, .6);
+				} else if (navxY >= angleOff && encRD <= rightDis7) {
+					driveTrain.tankDrive(.6, .65);
+				} else if (navxY <= -angleOff && encRD <= rightDis7) {
+					driveTrain.tankDrive(.65, .6);
+				} else if (encRD >= rightDis7) {
+					navx.reset();
+					step++;
+				}
+				break;
+			case 14: // Stop
+				System.out.println("14");
+				driveTrain.tankDrive(0, 0);
+			}
+		
+		} 
+		else if (ch4.get() == false) { // Left Switch Autonomous Selection
+			switch (step) {
+			case 1: // Decision Method
+				if (gameData.charAt(0) == 'L') { // Run Scoring Method
+					// s1.set(true);
+					// s2.set(true);
+					step++;
+				} else if (gameData.charAt(0) == 'R') { // Run Driving Method
+					// s1.set(true);
+					// s2.set(true);
+					step = 11;
+				}
+				rightEnc.reset();
+				navx.reset();
+				break;
+			case 2: 
+				if (encRD <= 1747) {
+					driveTrain.tankDrive(0.75, 0.7);
+				} else {
+					leftEnc.reset();
+					step++;
+				}
+				 break;
+			case 3:
+				//turn Right
+				break;
+			case 11:
+				if (encRD <= 1747) {
+					driveTrain.tankDrive(0.75, 0.75);
+				} else if (encRD > 1747) {
+					driveTrain.tankDrive(0, 0);
+					leftEnc.reset();
+					step++;
+				} break;
+			}
+		}
+				else if (ch5.get() == false) { // Left Switch Autonomous Selection
+					switch (step) {
+					case 1: // Decision Method
+						if (gameData.charAt(0) == 'L') { // Run Scoring Method
+							// s1.set(true);
+							// s2.set(true);
+							step = 11;
+						} else if (gameData.charAt(0) == 'R') { // Run Driving Method
+							// s1.set(true);
+							// s2.set(true);
+							step++;
+						}
+						rightEnc.reset();
+						navx.reset();
+						break;
+					case 2: 
+						if (encRD < 1747) {
+							driveTrain.tankDrive(0.75, 0.75);
+						} else if (encRD >= 1747) {
+							driveTrain.tankDrive(0, 0);
+							leftEnc.reset();
+							step++;
+						} break;
+					case 3:
+						m5.set(-1);
+						m8.set(1);
+						break;
+					case 11:
+						if (encRD <= 1747) {
+							driveTrain.tankDrive(0.75, 0.75);
+						} else if (encRD > 1747) {
+							driveTrain.tankDrive(0, 0);
+							leftEnc.reset();
+							step++;
+						} break;	
+			}
+		}
+		else { // Neutral Autonomous if (ch4.get() == false)
+			driveTrain.tankDrive(0, 0);
+		}
+	}
+
+	@Override
+	public void teleopInit() {
+		// Booleans
+		inTake = false;
+		outTake = false;
+		killLift = false;
+		killIntake = false;
+		killClimb = false;
+		gripCube = true;
+
+		// Resets
+		leftEnc.reset();
+		rightEnc.reset();
+		s0.set(false);
+		// starts gripper at 20 PSI
+		s2.set(false);
+		s3.set(false);
+	}
+
+	@Override
+	public void teleopPeriodic() {
+
+		// Motor Controllers
+		// Differential Drive Controls
+		double lValue = leftStick.getY() * -.8; // Left Drive Speed
+		double rValue = rightStick.getY() * -.8; // Right Drive Speed
+
+		// Encoder Controls
+		double encLD = leftEnc.getDistance() * -1; // Left Encoder Value
+		double encRD = rightEnc.getDistance() * 1; // Right Encoder Value
+		 System.out.println(encRD);
+
+		// Intake Controls
+		double lIntake = maniStick.getY() * 1; // Left Intake Speed Y - Axis
+		double rIntake = maniStick.getY() * -1; // Right Intake Speed Y - Axis
+		double loIntake = maniStick.getZ() * 1; // Left Intake Speed Z - Axis
+		double roIntake = maniStick.getZ() * -1; // Right Intake Speed Z - Axis
+
+		// Intake 2.0
+		if (maniStick.getY() >= .25 && killIntake == false) {
+			m5.set(lIntake * -1); // Starts Right Outtake
+			m8.set(rIntake * -1); // Starts Left Outtake
+		} else if (maniStick.getY() <= -.25) {
+			m5.set(lIntake * -1); // Starts Right Intake
+			m8.set(rIntake * -1); // Starts Left Intake
+			// killIntake = false;
+			gripCube = true;
+		} else if (maniStick.getZ() <= -.25) {
+			m5.set(loIntake * 1); // Starts Right Intake
+			m8.set(roIntake * -1); // Starts Left Intake
+			gripCube = true;
+		} else if (maniStick.getZ() >= .25) {
+			m5.set(loIntake * 1); // Starts Right Intake
+			m8.set(roIntake * -1); // Starts Left Intake
+			gripCube = true;
+		} else {
+			m5.set(0); // Stops Right Intake
+			m8.set(0); // Stops Left Intake
+		}
+
+		// Climber / Drive
+		m3.follow(m1); // Back Left Motor (Slave) Follows Front Left Motor
+		m4.follow(m2); // Back Right Motor (Slave) Follows Front Right Motor
+		// Aidan Foster 26 Feb 2018 Implemented the climber limit switch & last forty seconds
+		if (s45.get() == Value.kForward && leftStick.getPOV() == 180 && rightStick.getPOV() == 180 && topRung.get() == true
+				&& DriverStation.getInstance().getMatchTime() < 30) {
+			driveTrain.tankDrive(-1, -1); // Full Power Climb
+		} else if (s45.get() == Value.kForward && leftStick.getPOV() == -1 && rightStick.getPOV() == -1) {
+			driveTrain.tankDrive(0, 0); // Stops Climb
+		} else if (s45.get() == Value.kReverse) {
+			driveTrain.tankDrive(lValue, rValue); // Tank Drive Control
+			//Molly John 3-1-18 changed speed to be controlled with one motor to test in tele.
+			//driveTrain.tankDrive(lValue, lValue);
+			
+		}
+
+		// Lifter 2.0
+		if (maniStick.getPOV() == 0) {
+			autoLift = false;
+			s1.set(false); // releases Lifter Break
+			m6.set(ControlMode.PercentOutput, .65); // Moves Lifter Up // 45
+		} else if (maniStick.getPOV() == 180) {
+			autoLift = false;
+			s1.set(false); // Releases Lifter Break
+			m6.set(ControlMode.PercentOutput, -1);// Moves Lifter Down // -25
+		} else if (autoLift == false) {
+			m6.set(ControlMode.PercentOutput, 0); // Stops Lifter
+			s1.set(true); // Sets lifter Break
+		}
+
+		// Pneumatics
+		// Gripper
+		if (maniStick.getRawButton(3)) {
+			gripCube = false; // Opens Gripper
+		} else if (maniStick.getRawButton(4)) {
+			gripCube = true; // Closes Gripper
+		}
+
+		// Rocket Box Shifter
+		if (leftStick.getRawButton(2)) {
+			s45.set(Value.kReverse); // Engages Drive Train
+		} else if (rightStick.getRawButton(2)) {
+			s45.set(Value.kForward); // Engages Climber
+			// gripCube = false;
+			m6.set(ControlMode.Position, 3456); // Subject to change
+			targetPositionRotations = 3456;
+		}
+
+		// Climber Pin
+		if (leftStick.getPOV() == 0 && rightStick.getPOV() == 0) {
+			s0.set(true);
+		}
+		// AutoLift Break Control
+		// Reads Encoder units per 100 milliseconds
+		//Aidan Foster 2 march 2018 2:36
+		/*
+		if (autoLift == true && Math.abs(m6.getSelectedSensorVelocity(0)) <= 20) {
+			m6.set(ControlMode.PercentOutput, 0);
+			s1.set(true);
+			//System.out.println("Break applied");;
+		}
+		else {
+			//System.out.println("Break lifted");
+		}
+		*/
+		//System.out.println(m6.getSelectedSensorVelocity(0));
+
+		// Encoder Presets
+		if (maniStick.getRawButtonPressed(7) == true) {
+			autoLift = true;
+			s1.set(false);
+			//targetPositionRotations = floorPos;
+			m6.set(ControlMode.PercentOutput, -0.25); //0
+			//m6.set(ControlMode.Position, floorPos);
+		}
+		if (m6.getSensorCollection().isRevLimitSwitchClosed() == true && autoLift == true) {
+			autoLift = false;
+			m6.set(ControlMode.PercentOutput, 0);
+			s1.set(true);
+		}
+		if (maniStick.getRawButtonPressed(8) == true) {
+			autoLift = true;
+			s1.set(false);
+			targetPositionRotations = switchPos;
+			m6.set(ControlMode.PercentOutput, 0);
+			m6.set(ControlMode.Position, switchPos);
+		}
+		if (maniStick.getRawButtonPressed(9) == true) {
+			autoLift = true;
+			s1.set(false);
+			targetPositionRotations = scaleLPos;
+			m6.set(ControlMode.PercentOutput, 0);
+			m6.set(ControlMode.Position, scaleLPos);
+		}
+		if (maniStick.getRawButtonPressed(10) == true) {
+			autoLift = true;
+			s1.set(false);
+			//targetPositionRotations = scaleHPos;
+			m6.set(ControlMode.PercentOutput, 0.65);
+			//m6.set(ControlMode.Position, scaleHPos);
+		}
+		if (m6.getSensorCollection().isFwdLimitSwitchClosed() == true && autoLift == true) {
+			autoLift = false;
+			m6.set(ControlMode.PercentOutput, 0);
+			s1.set(true);
+		}
+
+		// Limit Switches
+		// Cube Pickup 2.0
+		if(autoCube.get() == true) {
+			gripCube = true;
+		} else {
+			killIntake = false;
+		}
+		/*
+		if (autoCube.get() == false) {
+			gripCube = true; // Grips Cube
+		
+		} else {
+			killIntake = false;
+		}
+		*/
+		m6.getClosedLoopError(0);
+		if (gripCube == true) {
+			// Aidan Foster 26 Feb 2018
+			// Attempted to make gripper go to 20 PSI when the bottom limit switch is triggered.
+			//26 Feb 2018 removed "&& Math.abs(m6.getClosedLoopError(0)) <= 300"
+			if (m6.getSensorCollection().isRevLimitSwitchClosed() == false || maniStick.getRawButton(1) == true) {
+				s2.set(true);
+			} else {
+				s2.set(false);
+			}
+			s3.set(false);
+		} else if (gripCube == false) {
+			s2.set(false);
+			s3.set(true);
+		}
+
+		// Kill Commands
+		// Kill Lift
+		if (maniStick.getRawButton(5)) {
+			killLift = true;
+		}
+		if (killLift == true) {
+			m6.set(ControlMode.PercentOutput, 0);
+			killLift = false;
+		}
+
+		// Kill Intake
+		if (maniStick.getRawButton(6)) {
+			killIntake = true;
+		}
+		if (killIntake == true) {
+			m5.set(0);
+			m8.set(0);
+		}
+		//System.out.println(m6.getSelectedSensorPosition(0) - targetPositionRotations);
+	}
+
+	@Override
+	public void disabledPeriodic() {
+		s0.set(false);
+	}
+
+	@Override
+	public void testInit() {
+		m3.follow(m1); // Back Left Motor (Slave) Follows Front Left Motor
+		m4.follow(m2); // Back Right Motor (Slave) Follows Front Right Motor
+	}
+
+	@Override
+	public void testPeriodic() {
+		// Differential Drive Controls
+		double lValue = leftStick.getY() * -1; // Left Drive Speed
+		double rValue = rightStick.getY() * -1; // Right Drive Speed
+		//molly-John 3-1-18 change speed to look for binding
+		driveTrain.tankDrive(lValue, lValue);
+		//driveTrain.tankDrive(lValue, rValue);
+		if (leftStick.getRawButton(2)) {
+			s45.set(Value.kForward); // Engages Drive Train
+		} else if (rightStick.getRawButton(2)) {
+			s45.set(Value.kReverse); // Engages Climber
+		}
+
+		if (leftStick.getPOV() == 0 && rightStick.getPOV() == 0) {
+			s0.set(true);
+		} else {
+			s0.set(false);
+		}
+		if (maniStick.getRawButton(3) == true) {
+			s2.set(true);
+		} else {
+			s2.set(false);
+		}
+		if (maniStick.getRawButton(4) == true) {
+			s3.set(true);
+		} else {
+			s3.set(false);
+		}
+		if (maniStick.getRawButton(11)) {
+			s0.set(true);
+		} else {
+			s0.set(false);
+		}
+
+		if (ch1.get() == false) {
+			System.out.println('0');
+		} else if (ch2.get() == false) {
+			System.out.println('1');
+		} else if (ch3.get() == false) {
+			System.out.println('2');
+		} else if (ch4.get() == false) {
+			System.out.println('3');
+		} else if (ch5.get() == false) {
+			System.out.println('4');
+		} else {
+			System.out.println("Null");
+		}
+		
+		m8.set(maniStick.getY()*-1);
+		m5.set(maniStick.getY()*-1);
+		
+	}
+	@Override
+	public void disabledInit() {
+		codeVersion();
+		m6.set(ControlMode.PercentOutput, 0);
+	}
+}
